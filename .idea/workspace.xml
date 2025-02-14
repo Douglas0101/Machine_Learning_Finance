@@ -4,13 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="393dd3c2-9877-42de-a2b3-7b9917f274b9" name="Changes" comment="Initial commit">
-      <change afterPath="$PROJECT_DIR$/data/interim/dataset_bank_interim.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/processed/data_bank_processed.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/raw/generate_dataset_bank.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/notebooks/project_bank.ipynb" afterDir="false" />
+    <list default="true" id="393dd3c2-9877-42de-a2b3-7b9917f274b9" name="Changes" comment="New codes and research.">
+      <change afterPath="$PROJECT_DIR$/src/data/make_dataset.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/features/build_features.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/csv-editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/csv-editor.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/notebooks/project_bank.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/notebooks/project_bank.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,14 +19,13 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="Jupyter Notebook" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -60,6 +58,7 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;Python.bank_dataset_generator.executor&quot;: &quot;Run&quot;,
+    &quot;Python.build_features.executor&quot;: &quot;Run&quot;,
     &quot;Python.data_bank_processed.executor&quot;: &quot;Run&quot;,
     &quot;Python.dataset_bank_interim.executor&quot;: &quot;Run&quot;,
     &quot;Python.dataset_banking_generator.executor&quot;: &quot;Run&quot;,
@@ -72,6 +71,7 @@
     &quot;Python.generator_data_finance.executor&quot;: &quot;Run&quot;,
     &quot;Python.ingest_features.executor&quot;: &quot;Run&quot;,
     &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.make_dataset.executor&quot;: &quot;Run&quot;,
     &quot;Python.preprocess.executor&quot;: &quot;Run&quot;,
     &quot;Python.preprocessing.executor&quot;: &quot;Run&quot;,
     &quot;Python.processed.executor&quot;: &quot;Run&quot;,
@@ -83,6 +83,7 @@
     &quot;com.codeium.enabled&quot;: &quot;true&quot;,
     &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/douglas-souza/PycharmProjects/Machine_Learning_Finance/src/data&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -93,19 +94,22 @@
   }
 }</component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/data" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/notebooks" />
       <recent name="$PROJECT_DIR$/data" />
       <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/data/raw/processed" />
       <recent name="$PROJECT_DIR$/data/feature_store" />
-      <recent name="$PROJECT_DIR$/scripts" />
     </key>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-822845ee3bb5-JavaScript-PY-243.23654.177" />
-        <option value="bundled-python-sdk-91d3a02ef49d-43b77aa2d136-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.23654.177" />
+        <option value="bundled-js-predefined-d6986cc7102b-76f8388c3a79-JavaScript-PY-243.24978.54" />
+        <option value="bundled-python-sdk-91e3b7efe1d4-466328ff949b-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-243.24978.54" />
       </set>
     </attachedChunks>
   </component>
@@ -136,7 +140,21 @@
       <workItem from="1739486397017" duration="3473000" />
       <workItem from="1739491888414" duration="3404000" />
       <workItem from="1739501200301" duration="6142000" />
-      <workItem from="1739556604268" duration="2224000" />
+      <workItem from="1739556604268" duration="3408000" />
+      <workItem from="1739578064064" duration="627000" />
+      <workItem from="1739584718784" duration="6586000" />
+      <workItem from="1739642177206" duration="1644000" />
+      <workItem from="1739643867160" duration="136000" />
+      <workItem from="1739646060077" duration="1928000" />
+      <workItem from="1739670433181" duration="3695000" />
+      <workItem from="1739725088430" duration="3722000" />
+      <workItem from="1739754141464" duration="4337000" />
+      <workItem from="1739758615588" duration="3708000" />
+      <workItem from="1739815185153" duration="1883000" />
+      <workItem from="1739817588817" duration="3801000" />
+      <workItem from="1739848633360" duration="2725000" />
+      <workItem from="1739893139270" duration="3007000" />
+      <workItem from="1739931864458" duration="8484000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />
@@ -162,7 +180,39 @@
       <option name="project" value="LOCAL" />
       <updated>1739247539593</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="New codes and research.">
+      <option name="closed" value="true" />
+      <created>1739560770194</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1739560770194</updated>
+    </task>
+    <task id="LOCAL-00005" summary="New codes and research.">
+      <option name="closed" value="true" />
+      <created>1739560812543</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1739560812543</updated>
+    </task>
+    <task id="LOCAL-00006" summary="New codes and research.">
+      <option name="closed" value="true" />
+      <created>1739560832631</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1739560832632</updated>
+    </task>
+    <task id="LOCAL-00007" summary="New codes and research.">
+      <option name="closed" value="true" />
+      <created>1739560856865</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1739560856865</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -170,16 +220,19 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="Initial commit" />
+    <MESSAGE value="New codes and research." />
+    <option name="LAST_COMMIT_MESSAGE" value="New codes and research." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$dataset_bank_interim.coverage" NAME="dataset_bank_interim Coverage Results" MODIFIED="1739473343228" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/interim" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$preprocessing.coverage" NAME="preprocessing Coverage Results" MODIFIED="1738701895475" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/preprocessing" />
+    <SUITE FILE_PATH="coverage/Machine_Learning_Finance$build_features.coverage" NAME="build_features Coverage Results" MODIFIED="1739848869447" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/features" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$processed_bank.coverage" NAME="processed_bank Coverage Results" MODIFIED="1739079254919" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/processed" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$generate_data_bank.coverage" NAME="generate_data_bank Coverage Results" MODIFIED="1739329112447" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/raw" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$generate_dataset_bank.coverage" NAME="generate_dataset_bank Coverage Results" MODIFIED="1739396096795" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/raw" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$definitions.coverage" NAME="definitions Coverage Results" MODIFIED="1738714748699" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/feature_store" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$main.coverage" NAME="main Coverage Results" MODIFIED="1738886529469" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Machine_Learning_Finance$make_dataset.coverage" NAME="make_dataset Coverage Results" MODIFIED="1739942658230" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/data" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$data_bank_processed.coverage" NAME="data_bank_processed Coverage Results" MODIFIED="1739481493075" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/processed" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$preprocess.coverage" NAME="preprocess Coverage Results" MODIFIED="1738713907698" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$dataset_generator.coverage" NAME="dataset_generator Coverage Results" MODIFIED="1738797791238" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/generator_data" />

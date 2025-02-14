@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/data/processed/dataset_bank_make.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/data/processed/dataset_bank_preprocessado.csv">
           <value>
             <Attribute>
@@ -17,7 +24,28 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/data/processed/dataset_final.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/data/processed/features_final.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/data/raw/dataset_financeiro_simulado.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/src/data/path_to_output.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
