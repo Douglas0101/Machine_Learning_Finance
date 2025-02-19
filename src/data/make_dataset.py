@@ -1,45 +1,49 @@
 import logging
 from datetime import datetime
 from typing import Union, Optional, List, Dict, Any
+
 import numpy as np
 import pandas as pd
-from sklearn.experimental import enable_iterative_imputer  # noqa
-from sklearn.impute import IterativeImputer, KNNImputer
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder, RobustScaler, PowerTransformer
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.feature_selection import VarianceThreshold, SelectFromModel
-from sklearn.ensemble import RandomForestClassifier
-from imblearn.over_sampling import SMOTE  # Para balanceamento de classes
 
-# Configuração de logging com timestamp no nome do arquivo
+# Scikit-learn imports (PCA é utilizado em PCAToDataFrame)
+from sklearn.experimental import enable_iterative_imputer  # noqa
+from sklearn.impute import IterativeImputer, KNNImputer, SimpleImputer
+from sklearn.preprocessing import StandardScaler, OrdinalEncoder, OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.decomposition import PCA
+from sklearn.model_selection import train_test_split
+from sklearn.base import BaseEstimator, TransformerMixin
+
+import matplotlib.pyplot as plt
+
+# Imbalanced-learn: SMOTE para oversampling
+from imblearn.over_sampling import SMOTE
+
+# -----------------------------------------------------------------------------
+# CONFIGURAÇÃO DE LOG E SEED
+# -----------------------------------------------------------------------------
 log_filename = f"make_dataset_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(log_filename)
-    ]
+    handlers=[logging.StreamHandler(), logging.FileHandler(log_filename)]
 )
 logger = logging.getLogger(__name__)
-
-# Seed para reprodutibilidade
 np.random.seed(42)
 
-# =============================================================================
-# 1. Ingestão e Validação de Dados
-# =============================================================================
 
+# -----------------------------------------------------------------------------
+# FUNÇÕES DE INGESTÃO E VALIDAÇÃO
+# -----------------------------------------------------------------------------
 def load_data(source: Union[str, pd.DataFrame],
               file_type: str = 'csv',
               chunksize: Optional[int] = None,
               **kwargs) -> pd.DataFrame:
-    """Carrega dados de diversas fontes"""
+    """Carrega dados de um arquivo CSV ou DataFrame."""
     try:
         if isinstance(source, pd.DataFrame):
             df = source.copy()
-        elif file_type == 'csv':
+        elif file_type.lower() == 'csv':
             if chunksize:
                 chunks = pd.read_csv(source, chunksize=chunksize, **kwargs)
                 df = pd.concat(chunks, ignore_index=True)
@@ -53,207 +57,501 @@ def load_data(source: Union[str, pd.DataFrame],
         logger.error(f"Erro ao carregar dados: {e}")
         raise
 
-def validate_schema(df: pd.DataFrame, expected_columns: Dict[str, Any]) -> None:
-    """Valida o esquema e tipos de dados"""
-    missing = [col for col in expected_columns if col not in df.columns]
-    if missing:
-        raise ValueError(f"Colunas ausentes: {missing}")
-    for col, expected_type in expected_columns.items():
-        if not np.issubdtype(df[col].dtype, expected_type):
-            logger.warning(f"A coluna '{col}' possui dtype {df[col].dtype}; esperado {expected_type}.")
+
+def validate_schema(df: pd.DataFrame, expected_schema: Dict[str, Any]) -> None:
+    """Valida se as colunas esperadas estão presentes e se os tipos são compatíveis."""
+    missing_cols = [col for col in expected_schema if col not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Colunas ausentes: {missing_cols}")
+    for col, expected_type in expected_schema.items():
+        if col in df.columns and not np.issubdtype(df[col].dtype, expected_type):
+            logger.warning(f"Coluna '{col}' possui dtype {df[col].dtype}; esperado {expected_type}.")
     logger.info("Validação de esquema concluída.")
 
-# =============================================================================
-# 2. Imputação Avançada de Dados Faltantes
-# =============================================================================
 
-def advanced_missing_imputation(df: pd.DataFrame,
-                                numeric_strategy: str = 'iterative',
-                                categorical_strategy: str = 'mode') -> pd.DataFrame:
-    """Trata dados faltantes com imputação avançada"""
-    df_imputed = df.copy()
+# -----------------------------------------------------------------------------
+# VERIFICAÇÃO DA DEPENDÊNCIA DO PACOTE category_encoders
+# -----------------------------------------------------------------------------
+try:
+    from category_encoders.hashing import HashingEncoder
 
-    # Imputação numérica
-    num_cols = df_imputed.select_dtypes(include=[np.number]).columns.tolist()
-    if num_cols:
-        if numeric_strategy == 'iterative':
-            imputer = IterativeImputer(random_state=42)
-        elif numeric_strategy == 'knn':
-            imputer = KNNImputer()
+    HASHING_ENCODER_AVAILABLE = True
+    logger.info("Pacote 'category_encoders' disponível. Utilizando HashingEncoder para encoding categórico.")
+except ImportError:
+    HASHING_ENCODER_AVAILABLE = False
+    logger.warning("Pacote 'category_encoders' não encontrado. Para utilizar o HashingEncoder, instale-o via:\n"
+                   "  pip install category_encoders\n  ou\n  conda install -c conda-forge category_encoders\n"
+                   "Utilizando fallback: OneHotEncoder para encoding categórico.")
+
+
+    class HashingEncoder(BaseEstimator, TransformerMixin):
+        """
+        Fallback: utiliza OneHotEncoder para encoding categórico.
+        Essa implementação não realiza hashing real, mas garante a continuidade do pipeline.
+        """
+
+        def __init__(self, n_components: int = 8, return_df: bool = True):
+            self.n_components = n_components
+            self.return_df = return_df
+            self.encoder = OneHotEncoder(drop='first', handle_unknown='ignore', sparse_output=False)
+
+        def fit(self, X, y=None):
+            return self.encoder.fit(X, y)
+
+        def transform(self, X):
+            out = self.encoder.transform(X)
+            if self.return_df:
+                return pd.DataFrame(out, columns=[f"hash_{i}" for i in range(out.shape[1])])
+            return out
+
+        def get_feature_names_out(self, input_features=None):
+            return self.encoder.get_feature_names_out(input_features) if input_features is not None else None
+
+
+# -----------------------------------------------------------------------------
+# TRANSFORMER: PCAToDataFrame
+# -----------------------------------------------------------------------------
+class PCAToDataFrame(BaseEstimator, TransformerMixin):
+    """
+    Envolve um objeto PCA e converte sua saída (numpy.ndarray) em um pandas.DataFrame.
+    As colunas são nomeadas como PC1, PC2, etc.
+    """
+
+    def __init__(self, n_components=0.95, **kwargs):
+        self.n_components = n_components
+        self.kwargs = kwargs
+        self.pca = PCA(n_components=self.n_components, **self.kwargs)
+
+    def fit(self, X, y=None):
+        self.pca.fit(X)
+        return self
+
+    def transform(self, X):
+        X_pca = self.pca.transform(X)
+        n_components = X_pca.shape[1]
+        columns = [f"PC{i + 1}" for i in range(n_components)]
+        if isinstance(X, pd.DataFrame):
+            return pd.DataFrame(X_pca, columns=columns, index=X.index)
         else:
-            raise ValueError("numeric_strategy não suportado.")
-        df_imputed[num_cols] = imputer.fit_transform(df_imputed[num_cols])
+            return pd.DataFrame(X_pca, columns=columns)
 
-    # Imputação categórica
-    cat_cols = df_imputed.select_dtypes(include=['object', 'category']).columns.tolist()
-    for col in cat_cols:
-        mode_val = df_imputed[col].mode().iloc[0]
-        df_imputed[col] = df_imputed[col].fillna(mode_val)
+    def get_feature_names_out(self, input_features=None):
+        n_components = self.pca.n_components_
+        return [f"PC{i + 1}" for i in range(n_components)]
 
-    logger.info("Imputação de missing concluída.")
-    return df_imputed
 
-# =============================================================================
-# 3. Detecção e Tratamento de Outliers
-# =============================================================================
+# -----------------------------------------------------------------------------
+# TRANSFORMER: BooleanToIntTransformer
+# -----------------------------------------------------------------------------
+class BooleanToIntTransformer(BaseEstimator, TransformerMixin):
+    """
+    Converte arrays booleanos para inteiros (0, 1).
+    Se o input for um DataFrame, converte as colunas booleanas.
+    """
 
-def handle_outliers(df: pd.DataFrame,
-                    num_cols: List[str],
-                    method: str = 'IQR',
-                    factor: float = 1.5) -> pd.DataFrame:
-    """Detecta e trata outliers em colunas numéricas"""
-    df_out = df.copy()
-    if method.upper() == 'IQR':
-        for col in num_cols:
-            Q1 = df_out[col].quantile(0.25)
-            Q3 = df_out[col].quantile(0.75)
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        if isinstance(X, pd.DataFrame):
+            df = X.copy()
+            bool_cols = df.select_dtypes(include=['bool']).columns
+            df[bool_cols] = df[bool_cols].astype(int)
+            return df.values
+        else:
+            X = np.array(X)
+            if X.dtype == np.bool_:
+                return X.astype(int)
+            return X
+
+    def get_feature_names_out(self, input_features=None):
+        return input_features if input_features is not None else None
+
+
+# -----------------------------------------------------------------------------
+# TRANSFORMER: DateTimeFeatureExtractor
+# -----------------------------------------------------------------------------
+class DateTimeFeatureExtractor(BaseEstimator, TransformerMixin):
+    """
+    Converte colunas de data (strings) em datetime e extrai features numéricas:
+      - _year, _month, _day, _hour.
+    A comparação é feita de forma case-insensitive; se drop_original=True, as colunas originais são removidas.
+    """
+
+    def __init__(self, datetime_cols: Optional[List[str]] = None, drop_original: bool = True):
+        self.datetime_cols = datetime_cols
+        self.drop_original = drop_original
+        self._dt_cols_fit = None
+
+    def fit(self, X, y=None):
+        df = pd.DataFrame(X).copy()
+        if self.datetime_cols is None:
+            self._dt_cols_fit = [col for col in df.columns if 'data' in col.lower() or 'dt' in col.lower()]
+        else:
+            dt_lower = [d.lower() for d in self.datetime_cols]
+            self._dt_cols_fit = [col for col in df.columns if col.lower() in dt_lower]
+        logger.info(f"DateTimeFeatureExtractor identificou as colunas: {self._dt_cols_fit}")
+        return self
+
+    def transform(self, X):
+        df = pd.DataFrame(X).copy()
+        for col in self._dt_cols_fit:
+            df[col] = pd.to_datetime(df[col], errors='coerce')
+            df[col + "_year"] = df[col].dt.year
+            df[col + "_month"] = df[col].dt.month
+            df[col + "_day"] = df[col].dt.day
+            df[col + "_hour"] = df[col].dt.hour
+        if self.drop_original:
+            df.drop(columns=self._dt_cols_fit, inplace=True)
+            logger.info(f"Colunas originais {self._dt_cols_fit} removidas após extração.")
+        return df
+
+    def get_feature_names_out(self, input_features=None):
+        return input_features if input_features is not None else None
+
+
+# -----------------------------------------------------------------------------
+# TRANSFORMER: OutlierClipper
+# -----------------------------------------------------------------------------
+class OutlierClipper(BaseEstimator, TransformerMixin):
+    """
+    Realiza clipping de outliers em colunas numéricas utilizando o método IQR.
+    """
+
+    def __init__(self, factor: float = 1.5):
+        self.factor = factor
+        self.lower_bounds_ = {}
+        self.upper_bounds_ = {}
+        self.feature_names_in_ = None
+
+    def fit(self, X, y=None):
+        df = pd.DataFrame(X).copy()
+        self.feature_names_in_ = df.columns.tolist()
+        for col in self.feature_names_in_:
+            Q1 = df[col].quantile(0.25)
+            Q3 = df[col].quantile(0.75)
             IQR = Q3 - Q1
-            lower_bound = Q1 - factor * IQR
-            upper_bound = Q3 + factor * IQR
-            df_out[col] = df_out[col].clip(lower=lower_bound, upper=upper_bound)
-            logger.info(f"Outliers tratados na coluna '{col}' com clipping via IQR.")
+            self.lower_bounds_[col] = Q1 - self.factor * IQR
+            self.upper_bounds_[col] = Q3 + self.factor * IQR
+        return self
+
+    def transform(self, X):
+        df = pd.DataFrame(X, columns=self.feature_names_in_).copy()
+        for col in self.feature_names_in_:
+            lb = self.lower_bounds_[col]
+            ub = self.upper_bounds_[col]
+            df[col] = df[col].clip(lower=lb, upper=ub)
+        return df.values
+
+    def get_feature_names_out(self, input_features=None):
+        return input_features if input_features is not None else self.feature_names_in_
+
+
+# -----------------------------------------------------------------------------
+# TRANSFORMER: LogTransformer
+# -----------------------------------------------------------------------------
+class LogTransformer(BaseEstimator, TransformerMixin):
+    """
+    Aplica transformação logarítmica (log1p) para estabilizar variâncias e reduzir o impacto de valores extremos.
+    Antes de aplicar np.log1p, os valores são convertidos para float e negativos são ajustados para 0.
+    """
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        X = np.array(X, dtype=np.float64)
+        X_clipped = np.clip(X, 0, None)
+        return np.log1p(X_clipped)
+
+    def get_feature_names_out(self, input_features=None):
+        return input_features if input_features is not None else None
+
+
+# -----------------------------------------------------------------------------
+# TRANSFORMER: DynamicColumnSelector
+# -----------------------------------------------------------------------------
+class DynamicColumnSelector(BaseEstimator, TransformerMixin):
+    """
+    Separa colunas numéricas, categóricas e ordinais e aplica os sub-pipelines correspondentes.
+    Possui parâmetros para processar todas as colunas categóricas e excluir colunas indesejadas.
+    """
+
+    def __init__(self,
+                 numeric_pipeline: Pipeline,
+                 ordinal_pipeline: Pipeline,
+                 cat_pipeline: Pipeline,
+                 ordinal_cols: List[str],
+                 cat_max_cardinality: int,
+                 process_all_categorical: bool = True,
+                 exclude_cols: Optional[List[str]] = None):
+        self.numeric_pipeline = numeric_pipeline
+        self.ordinal_pipeline = ordinal_pipeline
+        self.cat_pipeline = cat_pipeline
+        self.ordinal_cols = ordinal_cols
+        self.cat_max_cardinality = cat_max_cardinality
+        self.process_all_categorical = process_all_categorical
+        self.exclude_cols = exclude_cols if exclude_cols is not None else []
+        self.column_transformer_ = None
+
+    def fit(self, X, y=None):
+        df = pd.DataFrame(X).copy()
+        if self.exclude_cols:
+            df = df.drop(columns=self.exclude_cols, errors='ignore')
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+        ordinal_cols = [col for col in self.ordinal_cols if col in df.columns]
+        cat_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+        cat_cols = [c for c in cat_cols if c not in ordinal_cols]
+        if self.process_all_categorical:
+            cat_low_card_cols = cat_cols
+        else:
+            cat_low_card_cols = [c for c in cat_cols if df[c].nunique(dropna=True) <= self.cat_max_cardinality]
+        transformers = []
+        if numeric_cols:
+            transformers.append(("numeric", self.numeric_pipeline, numeric_cols))
+        if ordinal_cols:
+            transformers.append(("ordinal", self.ordinal_pipeline, ordinal_cols))
+        if cat_low_card_cols:
+            transformers.append(("categorical", self.cat_pipeline, cat_low_card_cols))
+        from sklearn.compose import ColumnTransformer
+        self.column_transformer_ = ColumnTransformer(transformers=transformers, remainder="drop")
+        self.column_transformer_.fit(df, y)
+        return self
+
+    def transform(self, X):
+        df = pd.DataFrame(X).copy()
+        if self.exclude_cols:
+            df = df.drop(columns=self.exclude_cols, errors='ignore')
+        transformed_array = self.column_transformer_.transform(df)
+        col_names = self.column_transformer_.get_feature_names_out()
+        if col_names is None:
+            return pd.DataFrame(transformed_array, index=df.index)
+        return pd.DataFrame(transformed_array, columns=col_names, index=df.index)
+
+
+# -----------------------------------------------------------------------------
+# FUNÇÃO: build_preprocessing_pipeline
+# -----------------------------------------------------------------------------
+def build_preprocessing_pipeline(
+        datetime_cols: Optional[List[str]] = None,
+        drop_original_datetime: bool = True,
+        numeric_imputer: str = 'iterative',
+        cat_imputer_strategy: str = 'most_frequent',
+        ordinal_cols: Optional[List[str]] = None,
+        cat_max_cardinality: int = 50,
+        process_all_categorical: bool = True,
+        exclude_cols: Optional[List[str]] = None,
+        apply_pca_flag: bool = True,
+        pca_components: float = 0.95,
+        hashing_n_components: int = 8
+) -> Pipeline:
+    """
+    Constrói o pipeline de pré-processamento com as seguintes etapas:
+      1. Extração de features de data/hora.
+      2. Seleção dinâmica de colunas e aplicação dos sub-pipelines:
+         - Numéricas: imputação, clipping, conversão de booleanos para inteiros, transformação logarítmica (com tratamento de valores inválidos) e escalonamento.
+         - Ordinais e categóricas: imputação e encoding.
+           -> Se category_encoders estiver disponível, utiliza HashingEncoder; caso contrário, utiliza OneHotEncoder.
+      3. (Opcional) PCA para redução de dimensionalidade, com saída convertida para DataFrame.
+    """
+    dt_extractor = DateTimeFeatureExtractor(datetime_cols=datetime_cols,
+                                            drop_original=drop_original_datetime)
+    if numeric_imputer == 'iterative':
+        num_imputer = IterativeImputer(random_state=42)
+    elif numeric_imputer == 'knn':
+        num_imputer = KNNImputer()
     else:
-        raise ValueError("Método de tratamento de outliers não suportado.")
-    return df_out
+        raise ValueError("numeric_imputer deve ser 'iterative' ou 'knn'.")
+    cat_imputer = SimpleImputer(strategy=cat_imputer_strategy)
 
-# =============================================================================
-# 4. Codificação e Escalonamento de Features
-# =============================================================================
+    # Pipeline numérico
+    numeric_pipeline = Pipeline(steps=[
+        ('num_imputer', num_imputer),
+        ('outlier_clipper', OutlierClipper(factor=1.5)),
+        ('bool_to_int', BooleanToIntTransformer()),
+        ('log_transform', LogTransformer()),
+        ('final_imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler())
+    ])
 
-def encode_and_scale_features(df: pd.DataFrame,
-                              ordinal_cols: Optional[List[str]] = None,
-                              cat_max_cardinality: int = 50,
-                              exclude_cols: Optional[List[str]] = None) -> pd.DataFrame:
-    """Aplica codificação e escalonamento nas features"""
+    # Pipeline ordinal
+    ordinal_pipeline = Pipeline(steps=[
+        ('cat_imputer', cat_imputer),
+        ('ordinal_enc', OrdinalEncoder())
+    ])
+
+    # Pipeline categórico: utiliza HashingEncoder se disponível; caso contrário, OneHotEncoder.
+    if HASHING_ENCODER_AVAILABLE:
+        cat_pipeline = Pipeline(steps=[
+            ('cat_imputer', cat_imputer),
+            ('hashing', HashingEncoder(n_components=hashing_n_components, return_df=True))
+        ])
+    else:
+        cat_pipeline = Pipeline(steps=[
+            ('cat_imputer', cat_imputer),
+            ('onehot', OneHotEncoder(drop='first', handle_unknown='ignore', sparse_output=False))
+        ])
+
     if ordinal_cols is None:
         ordinal_cols = []
-    if exclude_cols is None:
-        exclude_cols = []
 
-    df_excluded = df[exclude_cols].copy() if exclude_cols else pd.DataFrame(index=df.index)
-    df_to_transform = df.drop(columns=exclude_cols) if exclude_cols else df.copy()
+    col_selector = DynamicColumnSelector(
+        numeric_pipeline=numeric_pipeline,
+        ordinal_pipeline=ordinal_pipeline,
+        cat_pipeline=cat_pipeline,
+        ordinal_cols=ordinal_cols,
+        cat_max_cardinality=cat_max_cardinality,
+        process_all_categorical=process_all_categorical,
+        exclude_cols=exclude_cols
+    )
 
-    numeric_cols = df_to_transform.select_dtypes(include=[np.number]).columns.tolist()
-    all_cat_cols = df_to_transform.select_dtypes(include=['object', 'category']).columns.tolist()
-    non_ordinal_cols = [col for col in all_cat_cols if col not in ordinal_cols]
+    steps = [
+        ('date_time_extractor', dt_extractor),
+        ('dynamic_col_selector', col_selector)
+    ]
+    if apply_pca_flag:
+        steps.append(('pca', PCAToDataFrame(n_components=pca_components)))
+    pipeline = Pipeline(steps=steps)
+    return pipeline
 
-    filtered_cat_cols = [col for col in non_ordinal_cols if df_to_transform[col].nunique() <= cat_max_cardinality]
 
-    num_transformer = Pipeline(steps=[
-        ('scaler', RobustScaler()),
-        ('power', PowerTransformer(method='yeo-johnson'))
-    ])
-    cat_transformer = Pipeline(steps=[
-        ('onehot', OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore'))
-    ])
-
-    preprocessor = ColumnTransformer(transformers=[
-        ('num', num_transformer, numeric_cols),
-        ('cat', cat_transformer, filtered_cat_cols)
-    ])
-
-    processed_array = preprocessor.fit_transform(df_to_transform)
-    df_processed = pd.DataFrame(processed_array, columns=preprocessor.get_feature_names_out(), index=df_to_transform.index)
-
-    if ordinal_cols:
-        df_ordinal = df_to_transform[ordinal_cols].apply(lambda col: LabelEncoder().fit_transform(col))
-        df_processed = pd.concat([df_processed, df_ordinal], axis=1)
-
-    df_final = pd.concat([df_processed, df_excluded], axis=1)
-    return df_final
-
-# =============================================================================
-# 5. Seleção de Features
-# =============================================================================
-
-def feature_selection(df: pd.DataFrame,
-                      target: str,
-                      model_estimator: Any = RandomForestClassifier(random_state=42),
-                      var_threshold: float = 0.0) -> pd.DataFrame:
-    """Realiza seleção de features com base em variância e modelos"""
-    X = df.drop(target, axis=1)
-    y = df[target]
-
-    vt = VarianceThreshold(threshold=var_threshold)
-    X_vt = vt.fit_transform(X)
-    selected_columns = X.columns[vt.get_support()]
-    X_vt_df = pd.DataFrame(X_vt, columns=selected_columns, index=X.index)
-
-    sfm = SelectFromModel(model_estimator, threshold='median')
-    sfm.fit(X_vt_df, y)
-    final_columns = X_vt_df.columns[sfm.get_support()]
-
-    df_selected = X_vt_df[final_columns].copy()
-    df_selected[target] = y.values
-    return df_selected
-
-# =============================================================================
-# 6. Balanceamento de Classes
-# =============================================================================
-
-def balance_classes(df: pd.DataFrame, target: str) -> pd.DataFrame:
-    """Balanceia as classes do target usando SMOTE"""
-    X = df.drop(target, axis=1)
-    y = df[target]
-
-    smote = SMOTE(random_state=42)
-    X_res, y_res = smote.fit_resample(X, y)
-
-    df_balanced = pd.DataFrame(X_res, columns=X.columns)
-    df_balanced[target] = y_res
-    return df_balanced
-
-# =============================================================================
-# 7. Pipeline Principal: make_dataset
-# =============================================================================
-
-def make_dataset(source: Union[str, pd.DataFrame],
-                 target_column: str,
-                 expected_schema: Optional[Dict[str, Any]] = None,
-                 file_type: str = 'csv',
-                 chunksize: Optional[int] = None) -> pd.DataFrame:
-    """Pipeline principal para transformar o dataset em um formato pronto para modelagem"""
-    df = load_data(source, file_type=file_type, chunksize=chunksize)
-
+# -----------------------------------------------------------------------------
+# FUNÇÃO: make_dataset
+# -----------------------------------------------------------------------------
+def make_dataset(
+        source: Union[str, pd.DataFrame],
+        target_column: str,
+        expected_schema: Optional[Dict[str, Any]] = None,
+        file_type: str = 'csv',
+        test_size: float = 0.2,
+        random_state: int = 42,
+        datetime_cols: Optional[List[str]] = None,
+        drop_original_datetime: bool = True,
+        numeric_imputer: str = 'iterative',
+        cat_imputer_strategy: str = 'most_frequent',
+        ordinal_cols: Optional[List[str]] = None,
+        cat_max_cardinality: int = 50,
+        process_all_categorical: bool = True,
+        exclude_cols: Optional[List[str]] = None,
+        apply_pca_flag: bool = True,
+        pca_components: float = 0.95,
+        hashing_n_components: int = 8
+) -> Dict[str, pd.DataFrame]:
+    """
+    Carrega, valida e processa o dataset, dividindo-o em treino e teste.
+    Retorna um dicionário com: X_train, X_test, y_train e y_test.
+    """
+    df = load_data(source, file_type=file_type)
     if expected_schema:
         validate_schema(df, expected_schema)
+    if target_column not in df.columns:
+        raise ValueError(f"Coluna alvo '{target_column}' não encontrada.")
+    y = df[target_column].copy()
+    X = df.drop(columns=[target_column]).copy()
+    stratify_param = y if y.nunique() < 10 else None
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state, stratify=stratify_param
+    )
+    logger.info(f"Antes do SMOTE - Treino: {X_train.shape}, Target distribution: {y_train.value_counts().to_dict()}")
+    logger.info(f"Teste: {X_test.shape}, Target distribution: {y_test.value_counts().to_dict()}")
 
-    df = advanced_missing_imputation(df)
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    df = handle_outliers(df, numeric_cols, method='IQR', factor=1.5)
+    # Aplicar o pipeline de pré-processamento
+    pipeline = build_preprocessing_pipeline(
+        datetime_cols=datetime_cols,
+        drop_original_datetime=drop_original_datetime,
+        numeric_imputer=numeric_imputer,
+        cat_imputer_strategy=cat_imputer_strategy,
+        ordinal_cols=ordinal_cols,
+        cat_max_cardinality=cat_max_cardinality,
+        process_all_categorical=process_all_categorical,
+        exclude_cols=exclude_cols,
+        apply_pca_flag=apply_pca_flag,
+        pca_components=pca_components,
+        hashing_n_components=hashing_n_components
+    )
+    pipeline.fit(X_train, y_train)
+    X_train_proc = pipeline.transform(X_train)
+    X_test_proc = pipeline.transform(X_test)
 
-    df = encode_and_scale_features(df, exclude_cols=[target_column])
+    # Aplicar SMOTE somente no conjunto de treinamento
+    smote = SMOTE(random_state=random_state)
+    X_train_resampled, y_train_resampled = smote.fit_resample(X_train_proc, y_train)
+    logger.info(
+        f"Após SMOTE - Treino: {X_train_resampled.shape}, Target distribution: {pd.Series(y_train_resampled).value_counts().to_dict()}")
 
-    df = feature_selection(df, target=target_column)
-    df = balance_classes(df, target=target_column)
+    # Converter o resultado de SMOTE para DataFrame, preservando as colunas do pipeline
+    X_train_resampled = pd.DataFrame(X_train_resampled, columns=X_train_proc.columns)
 
-    logger.info(f"Dataset final shape: {df.shape}")
-    return df
+    logger.info(f"Dataset final processado -> Treino: {X_train_resampled.shape}, Teste: {X_test_proc.shape}")
+    return {
+        'X_train': X_train_resampled,
+        'X_test': X_test_proc,
+        'y_train': pd.Series(y_train_resampled),
+        'y_test': y_test
+    }
 
-# =============================================================================
-# Execução Principal
-# =============================================================================
 
+# -----------------------------------------------------------------------------
+# FUNÇÃO: main
+# -----------------------------------------------------------------------------
 def main() -> None:
     data_source = "../../data/raw/dataset_financeiro_simulado.csv"
     expected_schema = {
-        # Definir o esquema esperado das colunas
+        # Exemplo: ajuste conforme seu dataset
+        # "id_transacao": np.integer,
+        # "valor_transacao": np.number,
+        # "flag_fraude": np.bool_,
     }
-
     target_column = "flag_fraude"
-
     try:
-        dataset_final = make_dataset(
+        datasets = make_dataset(
             source=data_source,
             target_column=target_column,
             expected_schema=expected_schema,
-            file_type='csv'
+            file_type='csv',
+            test_size=0.2,
+            random_state=42,
+            datetime_cols=["data_transacao"],
+            drop_original_datetime=True,
+            numeric_imputer='iterative',
+            cat_imputer_strategy='most_frequent',
+            ordinal_cols=[],  # Adicione se houver colunas ordinais
+            cat_max_cardinality=50,
+            process_all_categorical=True,
+            exclude_cols=[],  # Liste colunas a excluir, se houver
+            apply_pca_flag=True,
+            pca_components=0.95,
+            hashing_n_components=8
         )
-        output_path = "../../data/processed/dataset_bank_make.csv"
-        dataset_final.to_csv(output_path, index=False)
-        logger.info(f"Dataset final salvo em: {output_path}")
+        # Salvando os datasets processados; os outputs são DataFrames.
+        datasets['X_train'].to_csv("../../data/processed/X_train_processed.csv", index=True)
+        datasets['X_test'].to_csv("../../data/processed/X_test_processed.csv", index=True)
+        datasets['y_train'].to_csv("../../data/processed/y_train.csv", index=True)
+        datasets['y_test'].to_csv("../../data/processed/y_test.csv", index=True)
+        logger.info("Datasets processados salvos com sucesso.")
+
+        # Visualizações gráficas:
+        # 1. Scatter plot dos dois primeiros componentes PCA (se disponíveis)
+        X_train_df = datasets['X_train']
+        pca_cols = [col for col in X_train_df.columns if col.startswith("PC")]
+        if len(pca_cols) >= 2:
+            plt.figure(figsize=(8, 6))
+            plt.scatter(X_train_df[pca_cols[0]], X_train_df[pca_cols[1]], alpha=0.5)
+            plt.xlabel(pca_cols[0])
+            plt.ylabel(pca_cols[1])
+            plt.title("Scatter Plot dos dois primeiros Componentes PCA")
+            plt.show()
+        # 2. Histograma da distribuição do target (Treino)
+        plt.figure(figsize=(8, 6))
+        datasets['y_train'].astype(int).hist(bins=30)
+        plt.xlabel("Target")
+        plt.ylabel("Frequência")
+        plt.title("Histograma do Target (Treino)")
+        plt.show()
+
     except Exception as e:
         logger.error(f"Erro no pipeline make_dataset: {e}")
+
 
 if __name__ == '__main__':
     main()
