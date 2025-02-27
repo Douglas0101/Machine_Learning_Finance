@@ -4,31 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="393dd3c2-9877-42de-a2b3-7b9917f274b9" name="Changes" comment="Merge remote-tracking branch 'origin/master'&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml">
-      <change afterPath="$PROJECT_DIR$/data/interim/interim.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/interim/test_interim.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/processed/processed.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/raw/generate_data_bank.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/features/feature_engineering.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/csv-editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/csv-editor.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/config.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/interim/dataset_bank_interim.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/interim/dataset_financeiro_intermediario.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/processed/X_test_processed.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/processed/X_train_processed.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/processed/data_bank_processed.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/processed/dataset_bank_preprocessado.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/processed/y_test.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/processed/y_train.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/raw/dataset_financeiro_simulado.csv" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/raw/generate_dataset_bank.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/notebooks/project_bank.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/data/interim/interim_v2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/data/make_dataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/data/make_dataset.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/features/build_features.py" beforeDir="false" />
-    </list>
+    <list default="true" id="393dd3c2-9877-42de-a2b3-7b9917f274b9" name="Changes" comment="Merge remote-tracking branch 'origin/master'&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -73,51 +49,51 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python tests.Python tests in test_interim.py.executor": "Run",
-    "Python.bank_dataset_generator.executor": "Run",
-    "Python.build_features.executor": "Run",
-    "Python.data_bank_processed.executor": "Run",
-    "Python.dataset_bank_interim.executor": "Run",
-    "Python.dataset_banking_generator.executor": "Run",
-    "Python.dataset_generator.executor": "Run",
-    "Python.dataset_generator_banking.executor": "Run",
-    "Python.definitions.executor": "Run",
-    "Python.feature_engineering.executor": "Run",
-    "Python.feature_store.executor": "Run",
-    "Python.generate_data_bank.executor": "Run",
-    "Python.generate_dataset_bank.executor": "Run",
-    "Python.generate_dataset_bankv2.executor": "Run",
-    "Python.generator_data_finance.executor": "Run",
-    "Python.ingest_features.executor": "Run",
-    "Python.interim_v2.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.make_dataset.executor": "Run",
-    "Python.modeling.executor": "Run",
-    "Python.preprocess.executor": "Run",
-    "Python.preprocessing.executor": "Run",
-    "Python.processed.executor": "Run",
-    "Python.processed_bank.executor": "Run",
-    "Python.processed_data_bank.executor": "Run",
-    "Python.processing.executor": "Run",
-    "Python.test_faker_version.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "com.codeium.enabled": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "/home/douglas-souza/PycharmProjects/Machine_Learning_Finance/src/data",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "run.code.analysis.last.selected.profile": "pProject Default",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python tests.Python tests in test_interim.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python.bank_dataset_generator.executor&quot;: &quot;Run&quot;,
+    &quot;Python.build_features.executor&quot;: &quot;Run&quot;,
+    &quot;Python.data_bank_processed.executor&quot;: &quot;Run&quot;,
+    &quot;Python.dataset_bank_interim.executor&quot;: &quot;Run&quot;,
+    &quot;Python.dataset_banking_generator.executor&quot;: &quot;Run&quot;,
+    &quot;Python.dataset_generator.executor&quot;: &quot;Run&quot;,
+    &quot;Python.dataset_generator_banking.executor&quot;: &quot;Run&quot;,
+    &quot;Python.definitions.executor&quot;: &quot;Run&quot;,
+    &quot;Python.feature_engineering.executor&quot;: &quot;Run&quot;,
+    &quot;Python.feature_store.executor&quot;: &quot;Run&quot;,
+    &quot;Python.generate_data_bank.executor&quot;: &quot;Run&quot;,
+    &quot;Python.generate_dataset_bank.executor&quot;: &quot;Run&quot;,
+    &quot;Python.generate_dataset_bankv2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.generator_data_finance.executor&quot;: &quot;Run&quot;,
+    &quot;Python.ingest_features.executor&quot;: &quot;Run&quot;,
+    &quot;Python.interim_v2.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.make_dataset.executor&quot;: &quot;Run&quot;,
+    &quot;Python.modeling.executor&quot;: &quot;Run&quot;,
+    &quot;Python.preprocess.executor&quot;: &quot;Run&quot;,
+    &quot;Python.preprocessing.executor&quot;: &quot;Run&quot;,
+    &quot;Python.processed.executor&quot;: &quot;Run&quot;,
+    &quot;Python.processed_bank.executor&quot;: &quot;Run&quot;,
+    &quot;Python.processed_data_bank.executor&quot;: &quot;Run&quot;,
+    &quot;Python.processing.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test_faker_version.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;com.codeium.enabled&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/douglas-souza/PycharmProjects/Machine_Learning_Finance/src/data&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/data" />
@@ -190,6 +166,7 @@
       <workItem from="1740535881128" duration="34636000" />
       <workItem from="1740673310352" duration="4658000" />
       <workItem from="1740680933846" duration="5851000" />
+      <workItem from="1740691015679" duration="462000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />
@@ -247,7 +224,15 @@
       <option name="project" value="LOCAL" />
       <updated>1739560856865</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Merge remote-tracking branch 'origin/master'&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml">
+      <option name="closed" value="true" />
+      <created>1740691214297</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1740691214297</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
