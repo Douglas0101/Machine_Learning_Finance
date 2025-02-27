@@ -1,0 +1,2 @@
+data_treinamento,algoritmo,balanceamento,threshold_otimo,features_totais,amostras_treino,amostras_teste,distribuicao_treino,distribuicao_teste
+20250227_135407,rf,smote,0.5050505050505051,58,37500,12500,"{0: 27099, 1: 10401}","{0: 9033, 1: 3467}"

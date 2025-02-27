@@ -1,0 +1,38 @@
+# config.yaml
+model_settings:
+  random_seed: 42
+  test_size: 0.2
+  validation_size: 0.1
+  target_column: "Risco_Inadimplencia"
+  id_column: "ID_Cliente"
+  threshold: 0.5
+  save_dir: "modelo_bancario"
+  model_type: "lightgbm"
+  handle_imbalance: true
+
+preprocessing:
+  handle_outliers: true
+  outlier_threshold: 3
+  feature_selection: true
+  max_features: 50
+  missing_threshold: 0.3
+
+model_params:
+  lightgbm:
+    n_estimators: 100
+    learning_rate: 0.1
+    max_depth: 3
+    num_leaves: 31
+    feature_fraction: 0.8
+    bagging_fraction: 0.8
+    bagging_freq: 5
+    min_data_in_leaf: 20
+
+monitoring:
+  enable_drift_detection: true
+  drift_threshold: 0.1
+  monitoring_period_days: 30
+
+parallel_processing:
+  enable: true
+  n_jobs: -1

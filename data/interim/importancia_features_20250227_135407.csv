@@ -1,0 +1,130 @@
+feature,importance,grupo
+Risco_Inadimplencia,0.2689412403068513,Risco
+Score_X_Comprometimento,0.09508483583353722,Score
+Percentual_Comprometimento_Renda,0.09120949819556261,Percentual
+Tem_Emprestimo_Ativo_Não,0.080265446940773,Tem
+Utilizacao_Credito_Percentual,0.0713970547290631,Utilizacao
+Razao_Emprestimo_Renda,0.04834665305781926,Razao
+Tem_Emprestimo_Ativo_Sim,0.03648901165694331,Tem
+Indice_Risco_Composto,0.03481214732858181,Indice
+Log_Score_Credito,0.03444791270797014,Log
+Score_Credito,0.027198553098444316,Score
+Valor_Emprestimo,0.024688208042165028,Valor
+Prazo_Emprestimo_Meses,0.02409020202590423,Prazo
+Taxa_Juros_Emprestimo,0.02265470026656505,Taxa
+Tipo_Emprestimo_Pessoal,0.017483419834766218,Tipo
+Taxa_Media_Emprestimos_Anteriores,0.01736405489640257,Taxa
+Possui_Cartao_Credito_Sim,0.010875929166007913,Possui
+Atraso_Medio_Pagamentos_Dias,0.009795783485894815,Atraso
+Tipo_Emprestimo_Veículo,0.006895437005320409,Tipo
+Possui_Cartao_Credito_Não,0.006687298088425367,Possui
+Baixo_Score,0.0062437559540668005,Baixo
+Percentual_Pagamento_Fatura,0.00454282047422786,Percentual
+Residencia_Propria_Sim,0.003565683931010421,Residencia
+Renda_Mensal,0.0032098670608774844,Renda
+Tipo_Emprestimo_Imobiliário,0.003082474130095861,Tipo
+Residencia_Propria_Não,0.0028241753729442215,Residencia
+Limite_Cartao_Credito,0.002724419845876491,Limite
+Satisfacao_Cliente_Muito Insatisfeito,0.00242847090414115,Satisfacao
+Indicadores_Risco,0.0023712563518821558,Indicadores
+Satisfacao_Cliente_Neutro,0.001966015293851524,Satisfacao
+Satisfacao_Cliente_Satisfeito,0.00166158960244915,Satisfacao
+Tipo_Emprestimo_Consignado,0.0015502130392790754,Tipo
+Segmento_Banco_Varejo,0.001386079101914858,Segmento
+Nivel_Educacional_Ensino Médio,0.0013207938132147152,Nivel
+Atraso_Frequente,0.001262807472836523,Atraso
+Num_Produtos,0.0012207262279890266,Num
+Segmento_Banco_Média Renda,0.0011540138434922894,Segmento
+Nivel_Educacional_Pós-Graduação,0.0009873804463048535,Nivel
+Limite_Cheque_Especial,0.0009854763955105589,Limite
+Faixa_Etaria_35-45,0.0009822004680254113,Faixa
+Nivel_Educacional_Superior Completo,0.0009611603863343205,Nivel
+Tempo_Relacionamento_Anos,0.0009451232925664056,Tempo
+Possui_Investimentos_Não,0.0009009914027332871,Possui
+Canais_Utilizados_Mobile Banking,0.0008946933634515964,Canais
+Saldo_Atual,0.0008585916408445604,Saldo
+Faixa_Tempo_Relacionamento_>10 anos,0.0007393841752684455,Faixa
+Valor_Transacao_Media,0.000723474339209647,Valor
+Satisfacao_Cliente_Insatisfeito,0.0007178983983345155,Satisfacao
+Segmento_Banco_Alta Renda,0.0007107263260096048,Segmento
+Saldo_Anterior_3M,0.0006895807961754122,Saldo
+Valor_Total_Emprestimos_Anteriores,0.0006867139550670999,Valor
+Numero_Transacoes_Mes_Media,0.0006384789855908649,Numero
+Possui_Investimentos_Sim,0.0005767225087085438,Possui
+Razao_Saldo_Renda,0.0005721008817996966,Razao
+Frequencia_Transacoes_Online_Alta,0.0005637452797898297,Frequencia
+Idade,0.0005614299827197862,Idade
+Tempo_Residencia_Anos,0.0005576063138415759,Tempo
+Variacao_Saldo_Percentual_3M,0.0005466990941333157,Variacao
+Numero_Emprestimos_Anteriores,0.0005351305058149815,Numero
+ID_Conta,0.0004937252639402587,ID
+Tipo_Conta_Corrente,0.00046404721487835945,Tipo
+Frequencia_Transacoes_Online_Média,0.00046193147601871236,Frequencia
+Tipo_Conta_Premium,0.0004495359493989301,Tipo
+Canais_Utilizados_Agência Física,0.0004086786009249697,Canais
+Numero_Reclamacoes_Ultimo_Ano,0.0003779486568145416,Numero
+Canais_Utilizados_Internet Banking,0.0003696491152688137,Canais
+Segmento_Banco_Private,0.0003610436051482345,Segmento
+Faixa_Tempo_Relacionamento_5-10 anos,0.0003454387580772447,Faixa
+Tipo_Transacao_Mais_Comum_Transferência,0.00033931855368365103,Tipo
+Estado_Civil_Divorciado,0.0003348107857554724,Estado
+Possui_Previdencia_Não,0.00031525334704766576,Possui
+Perfil_Investidor_Conservador,0.00031342361686112404,Perfil
+Faixa_Tempo_Relacionamento_3-5 anos,0.00030441925852569694,Faixa
+Perfil_Investidor_Arrojado,0.0002939640622362199,Perfil
+Perfil_Investidor_Moderado,0.0002910943907098638,Perfil
+Tem_Reclamacoes,0.0002818388843676425,Tem
+Nivel_Educacional_Ensino Fundamental,0.0002720894706660494,Nivel
+Frequencia_Transacoes_Online_Baixa,0.0002616149673079052,Frequencia
+Numero_Dependentes,0.00024252149838581072,Numero
+Tipo_Transacao_Mais_Comum_Compra Débito,0.00023672615479246808,Tipo
+Tipo_Transacao_Mais_Comum_Saque,0.00023357646732888532,Tipo
+Faixa_Tempo_Relacionamento_1-3 anos,0.0002230345338935404,Faixa
+Possui_Seguro_Vida_Sim,0.00020293398597066829,Possui
+Profissao_Empresário,0.00020288464820895127,Profissao
+Tipo_Transacao_Mais_Comum_Pagamento de Boleto,0.00019385877627995168,Tipo
+Nivel_Educacional_Superior Incompleto,0.00018999541473921057,Nivel
+Faixa_Etaria_45-55,0.0001774060112708212,Faixa
+Profissao_Contador,0.00015539902241052823,Profissao
+Possui_Seguro_Vida_Não,0.00015209527972946253,Possui
+Genero_Feminino,0.000146612433946221,Genero
+Profissao_Aposentado,0.00014621725869784152,Profissao
+Tipo_Conta_Salário,0.00014355224670195568,Tipo
+Estado_Civil_Casado,0.0001335455425885623,Estado
+Possui_Previdencia_Sim,0.00012439918563019232,Possui
+Genero_Masculino,0.00012054869543301529,Genero
+Tipo_Conta_Digital,0.0001176614029948318,Tipo
+Tipo_Transacao_Mais_Comum_Compra Crédito,0.00011667657369452505,Tipo
+Canais_Utilizados_Telefone,0.0001145868475330715,Canais
+Profissao_Motorista,0.00011142799077012392,Profissao
+Estado_Civil_Solteiro,0.00011104331697445378,Estado
+Profissao_Gerente,0.00010239878647267108,Profissao
+Tipo_Transacao_Mais_Comum_Depósito,9.982001892857376e-05,Tipo
+Profissao_Comerciante,9.766767103918885e-05,Profissao
+Profissao_Analista,9.696303007939273e-05,Profissao
+Profissao_Professor,9.614098648204732e-05,Profissao
+Nacionalidade_Brasileira,9.248528013364818e-05,Nacionalidade
+Profissao_Engenheiro,9.030935344617147e-05,Profissao
+Faixa_Etaria_<25,8.844106010935467e-05,Faixa
+Profissao_Estudante,8.766565042982828e-05,Profissao
+Faixa_Etaria_25-35,8.249158341215633e-05,Faixa
+Profissao_Vendedor,8.201673755517615e-05,Profissao
+Profissao_Recepcionista,8.196739551696922e-05,Profissao
+Faixa_Tempo_Relacionamento_<1 ano,8.073047255129183e-05,Faixa
+Profissao_Médico,7.903271227526787e-05,Profissao
+Tipo_Conta_Poupança,7.652070504390041e-05,Tipo
+Utilizacao_Cheque_Especial,6.761777517250289e-05,Utilizacao
+Faixa_Etaria_55-65,6.065004667072253e-05,Faixa
+Profissao_Autônomo,6.013644582185008e-05,Profissao
+Faixa_Etaria_>65,6.004589496946238e-05,Faixa
+Profissao_Enfermeiro,5.937541960574668e-05,Profissao
+Genero_Outro,5.832968900268523e-05,Genero
+Estado_Civil_Viúvo,5.814324237687282e-05,Estado
+Nacionalidade_Portuguesa,5.7752503921825016e-05,Nacionalidade
+Profissao_Técnico,5.6378142693389644e-05,Profissao
+Profissao_Advogado,5.307925120724142e-05,Profissao
+Satisfacao_Cliente_Muito Satisfeito,5.008043984127463e-05,Satisfacao
+Nacionalidade_Alemã,4.978728081452394e-05,Nacionalidade
+Nacionalidade_Argentina,2.5452195257212044e-05,Nacionalidade
+Nacionalidade_Outras,2.023636878740361e-05,Nacionalidade
+Nacionalidade_Italiana,1.3896569393535626e-05,Nacionalidade
