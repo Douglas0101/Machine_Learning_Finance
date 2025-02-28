@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Validação de Dados</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1, h2, h3 { color: #333366; }
+        .section { margin-bottom: 30px; }
+        .status-valid { color: green; }
+        .status-invalid { color: red; }
+        .error { color: red; margin-left: 20px; }
+        .warning { color: orange; margin-left: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <h1>Relatório de Validação de Dados</h1>
+    <p><strong>Data:</strong> 27/02/2025 23:15:01</p>
+    <p><strong>Status:</strong> <span class="status-valid">Válido</span></p>
+    <p><strong>Registros analisados:</strong> 50000</p>
+    <p><strong>Colunas analisadas:</strong> 51</p>
+    <div class="section">
+        <h2>Detalhes da validação</h2>
+        <h3>Estatísticas básicas</h3>
+        <table>
+            <tr><th>Coluna</th><th>Tipo</th><th>Não nulos</th><th>Valores únicos</th><th>Min</th><th>Max</th><th>Média</th><th>Desvio padrão</th></tr>
+            <tr><td>ID_Cliente</td><td>int64</td><td>50000</td><td>50000</td><td>1</td><td>50000</td><td>25000.50</td><td>14433.90</td></tr>
+            <tr><td>Nome_Completo</td><td>object</td><td>50000</td><td>29765</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Data_Nascimento</td><td>object</td><td>50000</td><td>67</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Idade</td><td>int64</td><td>50000</td><td>51</td><td>17</td><td>84</td><td>44.70</td><td>14.21</td></tr>
+            <tr><td>Genero</td><td>object</td><td>50000</td><td>3</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Estado_Civil</td><td>object</td><td>50000</td><td>4</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Nacionalidade</td><td>object</td><td>47504</td><td>6</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Nivel_Educacional</td><td>object</td><td>46946</td><td>5</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Profissao</td><td>object</td><td>49732</td><td>17</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Renda_Mensal</td><td>float64</td><td>47009</td><td>45824</td><td>466.21</td><td>275547.55</td><td>6697.34</td><td>5585.48</td></tr>
+            <tr><td>Numero_Dependentes</td><td>float64</td><td>47981</td><td>5</td><td>0.0</td><td>4.0</td><td>0.88</td><td>1.01</td></tr>
+            <tr><td>Residencia_Propria</td><td>object</td><td>50000</td><td>2</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Tempo_Residencia_Anos</td><td>float64</td><td>44648</td><td>527</td><td>0.0</td><td>63.0</td><td>7.47</td><td>8.39</td></tr>
+            <tr><td>CEP</td><td>object</td><td>48243</td><td>48225</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Score_Credito</td><td>int64</td><td>50000</td><td>481</td><td>434</td><td>967</td><td>746.62</td><td>68.79</td></tr>
+            <tr><td>ID_Conta</td><td>int64</td><td>50000</td><td>50000</td><td>1</td><td>50000</td><td>25000.50</td><td>14433.90</td></tr>
+            <tr><td>Tipo_Conta</td><td>object</td><td>50000</td><td>5</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Data_Abertura_Conta</td><td>object</td><td>50000</td><td>13772</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Tempo_Relacionamento_Anos</td><td>float64</td><td>50000</td><td>13772</td><td>0.0</td><td>61.90554414784394</td><td>13.37</td><td>11.26</td></tr>
+            <tr><td>Saldo_Atual</td><td>float64</td><td>50000</td><td>49830</td><td>-28440.73</td><td>5376729.83</td><td>51108.26</td><td>119900.12</td></tr>
+            <tr><td>Limite_Cheque_Especial</td><td>float64</td><td>50000</td><td>25676</td><td>0.0</td><td>64918.76</td><td>5019.40</td><td>8057.15</td></tr>
+            <tr><td>Numero_Transacoes_Mes_Media</td><td>int64</td><td>50000</td><td>112</td><td>1</td><td>113</td><td>24.57</td><td>16.83</td></tr>
+            <tr><td>Valor_Transacao_Media</td><td>float64</td><td>45454</td><td>40248</td><td>21.5</td><td>87687.89</td><td>1165.25</td><td>1634.63</td></tr>
+            <tr><td>Tipo_Transacao_Mais_Comum</td><td>object</td><td>50000</td><td>6</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Frequencia_Transacoes_Online</td><td>object</td><td>47006</td><td>3</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Tem_Emprestimo_Ativo</td><td>object</td><td>50000</td><td>2</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Tipo_Emprestimo</td><td>object</td><td>18317</td><td>4</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Valor_Emprestimo</td><td>float64</td><td>18317</td><td>18308</td><td>1934.82</td><td>30757309.04</td><td>619139.12</td><td>1563931.85</td></tr>
+            <tr><td>Taxa_Juros_Emprestimo</td><td>float64</td><td>18317</td><td>341</td><td>0.6</td><td>4.0</td><td>2.07</td><td>0.94</td></tr>
+            <tr><td>Prazo_Emprestimo_Meses</td><td>float64</td><td>18317</td><td>10</td><td>12.0</td><td>360.0</td><td>79.35</td><td>92.38</td></tr>
+            <tr><td>Status_Emprestimo</td><td>object</td><td>18317</td><td>3</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Canais_Utilizados</td><td>object</td><td>46414</td><td>4</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Numero_Reclamacoes_Ultimo_Ano</td><td>float64</td><td>48481</td><td>9</td><td>0.0</td><td>8.0</td><td>0.33</td><td>0.84</td></tr>
+            <tr><td>Satisfacao_Cliente</td><td>object</td><td>46683</td><td>5</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Saldo_Anterior_3M</td><td>float64</td><td>50000</td><td>49847</td><td>-30552.28</td><td>5166276.52</td><td>50309.20</td><td>116339.60</td></tr>
+            <tr><td>Variacao_Saldo_Percentual_3M</td><td>float64</td><td>50000</td><td>6423</td><td>-58.0</td><td>66.1</td><td>1.13</td><td>10.94</td></tr>
+            <tr><td>Limite_Cartao_Credito</td><td>float64</td><td>50000</td><td>49474</td><td>889.34</td><td>149977.79</td><td>17198.30</td><td>17984.45</td></tr>
+            <tr><td>Utilizacao_Credito_Percentual</td><td>float64</td><td>50000</td><td>8951</td><td>0.02</td><td>99.67</td><td>39.60</td><td>21.42</td></tr>
+            <tr><td>Numero_Emprestimos_Anteriores</td><td>int64</td><td>50000</td><td>28</td><td>0</td><td>27</td><td>3.39</td><td>3.66</td></tr>
+            <tr><td>Valor_Total_Emprestimos_Anteriores</td><td>float64</td><td>50000</td><td>36443</td><td>0.0</td><td>29530356.83</td><td>157418.30</td><td>347100.65</td></tr>
+            <tr><td>Taxa_Media_Emprestimos_Anteriores</td><td>float64</td><td>36464</td><td>371</td><td>0.8</td><td>4.5</td><td>1.95</td><td>0.67</td></tr>
+            <tr><td>Perfil_Investidor</td><td>object</td><td>50000</td><td>3</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Segmento_Banco</td><td>object</td><td>50000</td><td>4</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Possui_Cartao_Credito</td><td>object</td><td>50000</td><td>2</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Possui_Seguro_Vida</td><td>object</td><td>50000</td><td>2</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Possui_Previdencia</td><td>object</td><td>50000</td><td>2</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Possui_Investimentos</td><td>object</td><td>50000</td><td>2</td><td>N/A</td><td>N/A</td><td>N/A</td><td>N/A</td></tr>
+            <tr><td>Percentual_Pagamento_Fatura</td><td>float64</td><td>45842</td><td>6723</td><td>0.48</td><td>99.94</td><td>75.21</td><td>15.40</td></tr>
+            <tr><td>Atraso_Medio_Pagamentos_Dias</td><td>float64</td><td>45842</td><td>180</td><td>0.0</td><td>36.5</td><td>1.32</td><td>1.82</td></tr>
+            <tr><td>Percentual_Comprometimento_Renda</td><td>float64</td><td>50000</td><td>8108</td><td>16.0</td><td>100.0</td><td>74.83</td><td>26.81</td></tr>
+            <tr><td>Risco_Inadimplencia</td><td>float64</td><td>50000</td><td>775</td><td>20.3</td><td>100.0</td><td>67.07</td><td>16.74</td></tr>
+        </table>
+        <h3>Valores ausentes por coluna</h3>
+        <table>
+            <tr><th>Coluna</th><th>% Ausente</th></tr>
+            <tr><td>ID_Cliente</td><td>0.00%</td></tr>
+            <tr><td>Nome_Completo</td><td>0.00%</td></tr>
+            <tr><td>Data_Nascimento</td><td>0.00%</td></tr>
+            <tr><td>Idade</td><td>0.00%</td></tr>
+            <tr><td>Genero</td><td>0.00%</td></tr>
+            <tr><td>Estado_Civil</td><td>0.00%</td></tr>
+            <tr><td>Nacionalidade</td><td>4.99%</td></tr>
+            <tr><td>Nivel_Educacional</td><td>6.11%</td></tr>
+            <tr><td>Profissao</td><td>0.54%</td></tr>
+            <tr><td>Renda_Mensal</td><td>5.98%</td></tr>
+            <tr><td>Numero_Dependentes</td><td>4.04%</td></tr>
+            <tr><td>Residencia_Propria</td><td>0.00%</td></tr>
+            <tr><td>Tempo_Residencia_Anos</td><td>10.70%</td></tr>
+            <tr><td>CEP</td><td>3.51%</td></tr>
+            <tr><td>Score_Credito</td><td>0.00%</td></tr>
+            <tr><td>ID_Conta</td><td>0.00%</td></tr>
+            <tr><td>Tipo_Conta</td><td>0.00%</td></tr>
+            <tr><td>Data_Abertura_Conta</td><td>0.00%</td></tr>
+            <tr><td>Tempo_Relacionamento_Anos</td><td>0.00%</td></tr>
+            <tr><td>Saldo_Atual</td><td>0.00%</td></tr>
+            <tr><td>Limite_Cheque_Especial</td><td>0.00%</td></tr>
+            <tr><td>Numero_Transacoes_Mes_Media</td><td>0.00%</td></tr>
+            <tr><td>Valor_Transacao_Media</td><td>9.09%</td></tr>
+            <tr><td>Tipo_Transacao_Mais_Comum</td><td>0.00%</td></tr>
+            <tr><td>Frequencia_Transacoes_Online</td><td>5.99%</td></tr>
+            <tr><td>Tem_Emprestimo_Ativo</td><td>0.00%</td></tr>
+            <tr><td>Tipo_Emprestimo</td><td>63.37%</td></tr>
+            <tr><td>Valor_Emprestimo</td><td>63.37%</td></tr>
+            <tr><td>Taxa_Juros_Emprestimo</td><td>63.37%</td></tr>
+            <tr><td>Prazo_Emprestimo_Meses</td><td>63.37%</td></tr>
+            <tr><td>Status_Emprestimo</td><td>63.37%</td></tr>
+            <tr><td>Canais_Utilizados</td><td>7.17%</td></tr>
+            <tr><td>Numero_Reclamacoes_Ultimo_Ano</td><td>3.04%</td></tr>
+            <tr><td>Satisfacao_Cliente</td><td>6.63%</td></tr>
+            <tr><td>Saldo_Anterior_3M</td><td>0.00%</td></tr>
+            <tr><td>Variacao_Saldo_Percentual_3M</td><td>0.00%</td></tr>
+            <tr><td>Limite_Cartao_Credito</td><td>0.00%</td></tr>
+            <tr><td>Utilizacao_Credito_Percentual</td><td>0.00%</td></tr>
+            <tr><td>Numero_Emprestimos_Anteriores</td><td>0.00%</td></tr>
+            <tr><td>Valor_Total_Emprestimos_Anteriores</td><td>0.00%</td></tr>
+            <tr><td>Taxa_Media_Emprestimos_Anteriores</td><td>27.07%</td></tr>
+            <tr><td>Perfil_Investidor</td><td>0.00%</td></tr>
+            <tr><td>Segmento_Banco</td><td>0.00%</td></tr>
+            <tr><td>Possui_Cartao_Credito</td><td>0.00%</td></tr>
+            <tr><td>Possui_Seguro_Vida</td><td>0.00%</td></tr>
+            <tr><td>Possui_Previdencia</td><td>0.00%</td></tr>
+            <tr><td>Possui_Investimentos</td><td>0.00%</td></tr>
+            <tr><td>Percentual_Pagamento_Fatura</td><td>8.32%</td></tr>
+            <tr><td>Atraso_Medio_Pagamentos_Dias</td><td>8.32%</td></tr>
+            <tr><td>Percentual_Comprometimento_Renda</td><td>0.00%</td></tr>
+            <tr><td>Risco_Inadimplencia</td><td>0.00%</td></tr>
+        </table>
+    </div>
+</body>
+</html>
