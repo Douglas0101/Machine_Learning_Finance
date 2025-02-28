@@ -3,5 +3,8 @@
   <component name="Black">
     <option name="sdkName" value="rapids-24.12" />
   </component>
+  <component name="ExtraIDETweaksSettingsProject">
+    <option name="enableOpenEditorsShowRecentFiles" value="false" />
+  </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="rapids-24.12" project-jdk-type="Python SDK" />
 </project>
