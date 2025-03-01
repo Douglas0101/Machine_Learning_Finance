@@ -5,10 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="393dd3c2-9877-42de-a2b3-7b9917f274b9" name="Changes" comment="Merge remote-tracking branch 'origin/master'&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml">
-      <change afterPath="$PROJECT_DIR$/src/models/model_evaluation.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/models/predict_model.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/models/train_model.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/utils/path_manager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/predict_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/predict_model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/train_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/train_model.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -77,6 +77,7 @@
     "Python.main.executor": "Run",
     "Python.make_dataset.executor": "Run",
     "Python.modeling.executor": "Run",
+    "Python.predict_model.executor": "Run",
     "Python.preprocess.executor": "Run",
     "Python.preprocessing.executor": "Run",
     "Python.processed.executor": "Run",
@@ -178,6 +179,7 @@
       <workItem from="1740705072146" duration="15823000" />
       <workItem from="1740766380638" duration="618000" />
       <workItem from="1740767011111" duration="1773000" />
+      <workItem from="1740798667914" duration="607000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />
@@ -352,5 +354,6 @@
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$generator_data_finance.coverage" NAME="generator_data_finance Coverage Results" MODIFIED="1738801447746" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$dataset_banking_generator.coverage" NAME="dataset_banking_generator Coverage Results" MODIFIED="1738814313072" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$ingest_features.coverage" NAME="ingest_features Coverage Results" MODIFIED="1738709772531" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/feature_store/scripts" />
+    <SUITE FILE_PATH="coverage/Machine_Learning_Finance$predict_model.coverage" NAME="predict_model Coverage Results" MODIFIED="1740799096439" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/models" />
   </component>
 </project>
