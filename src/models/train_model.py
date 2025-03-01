@@ -15,7 +15,7 @@ import warnings
 from datetime import datetime
 import time  # Adicione esta linha
 import re
-from typing import Dict, List, Tuple, Any, Optional, Union
+from typing import Dict, Tuple, Any, Optional
 
 # Modelos
 from sklearn.linear_model import LogisticRegression

@@ -1,0 +1,17 @@
+{
+    "timestamp": "20250302_232504",
+    "models": [
+        "LogisticRegression",
+        "RandomForest",
+        "LightGBM",
+        "XGBoost"
+    ],
+    "thresholds": {
+        "LogisticRegression": 0.24000000000000002,
+        "RandomForest": 0.35000000000000003,
+        "LightGBM": 0.36000000000000004,
+        "XGBoost": 0.4
+    },
+    "best_model": "LightGBM",
+    "cost_fn_ratio": 5.0
+}
