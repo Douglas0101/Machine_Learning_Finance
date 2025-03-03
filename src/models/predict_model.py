@@ -13,84 +13,162 @@ import numpy as np
 import joblib
 import json
 from datetime import datetime
+import traceback
 
-# Configurar logger específico para este módulo para garantir thread-safety
+# Configurar logger específico para este módulo
 logger = logging.getLogger(__name__)
-if not logger.handlers:
-    # Configurar apenas se não tiver sido configurado
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
-# Adicionar importação do PathManager com tratamento de erro
-try:
-    sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
-    from src.utils.path_manager import PathManager
-except ImportError as e:
-    logger.error(f"Erro ao importar PathManager: {str(e)}")
-    logger.warning("Criando classe PathManager substituta")
+# Garantir que o diretório raiz do projeto esteja no PYTHONPATH
+project_root = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 
-    # Classe substituta para garantir o funcionamento mesmo sem a importação
-    class PathManager:
-        """Versão substituta de PathManager."""
+# Classe PathManager aprimorada
+class PathManager:
+    """Gerenciador de caminhos para o projeto de predição de inadimplência."""
 
-        def get_data_path(self, subdir: str) -> str:
-            """Retorna caminho para diretório de dados."""
-            return os.path.join("data", subdir)
+    def __init__(self):
+        """Inicializa o gerenciador de caminhos."""
+        # Encontrar o diretório raiz do projeto de várias maneiras possíveis
+        self.project_root = self._find_project_root()
+        logger.info(f"Diretório raiz do projeto: {self.project_root}")
 
-        def get_model_path(self, subdir: str) -> str:
-            """Retorna caminho para diretório de modelos."""
-            return os.path.join("models", subdir)
+    def _find_project_root(self) -> str:
+        """
+        Encontra o diretório raiz do projeto de maneira robusta.
+        Tenta múltiplas abordagens para lidar com diferentes ambientes de execução.
+        """
+        # Método 1: Baseado no caminho deste arquivo
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        root = os.path.abspath(os.path.join(current_dir, os.pardir, os.pardir))
 
-        def get_report_path(self, subdir: str, filename: Optional[str] = None) -> str:
-            """Retorna caminho para diretório de relatórios."""
-            path = os.path.join("reports", subdir)
-            if filename:
-                path = os.path.join(path, filename)
-            return path
+        # Verificar se é realmente o diretório raiz (presença de diretórios chave)
+        if os.path.exists(os.path.join(root, 'src')) and os.path.exists(os.path.join(root, 'models')):
+            return root
 
-        def find_model_file(self, model_name: str) -> Optional[str]:
-            """Encontra arquivo de modelo com nome específico."""
-            return None
+        # Método 2: Baseado no diretório de trabalho atual
+        root = os.getcwd()
+        while root and not (os.path.exists(os.path.join(root, 'src')) and
+                           os.path.exists(os.path.join(root, 'models'))):
+            parent = os.path.dirname(root)
+            if parent == root:  # Chegou ao diretório raiz do sistema
+                break
+            root = parent
 
-        def find_data_file(self, filename: str) -> Optional[str]:
-            """Encontra arquivo de dados com nome específico."""
-            return None
+        if os.path.exists(os.path.join(root, 'src')) and os.path.exists(os.path.join(root, 'models')):
+            return root
 
-# Tentar importar FeatureEngineer de train_model.py
-try:
-    # Primeiro, tentar importação relativa baseada no diretório
-    from src.models.train_model import FeatureEngineer
-except ImportError:
-    try:
-        # Tentar importação direta se estiver no mesmo diretório
-        from train_model import FeatureEngineer
-    except ImportError:
-        # Definir versão stub da classe em caso de falha
-        class FeatureEngineer:
-            """Versão stub da classe FeatureEngineer para compatibilidade."""
+        # Método 3: Fallback para o diretório atual
+        return os.getcwd()
 
-            def __init__(self) -> None:
-                self.feature_map: Dict[str, Any] = {}
-                self.categorical_features: List[str] = []
-                self.generated_features: List[str] = []
-                self.selected_features: Optional[List[str]] = None
+    def get_data_path(self, subdir: str) -> str:
+        """Retorna caminho para diretório de dados."""
+        path = os.path.join(self.project_root, "data", subdir)
+        return path
 
-            def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-                """Apenas retorna o dataframe sem modificações."""
-                return df
+    def get_model_path(self, subdir: str) -> str:
+        """Retorna caminho para diretório de modelos."""
+        path = os.path.join(self.project_root, "models", subdir)
+        return path
 
-            def fit_transform(self, df: pd.DataFrame, target_col: Optional[str] = None) -> pd.DataFrame:
-                """Apenas retorna o dataframe sem modificações."""
-                return df
+    def get_report_path(self, subdir: str, filename: Optional[str] = None) -> str:
+        """Retorna caminho para diretório de relatórios."""
+        path = os.path.join(self.project_root, "reports", subdir)
+        if filename:
+            path = os.path.join(path, filename)
+        return path
+
+    def find_model_file(self, model_name: str) -> Optional[str]:
+        """
+        Encontra arquivo de modelo com nome específico.
+        Tenta múltiplos diretórios e suporta busca flexível por padrões.
+        """
+        # Padrões de busca para diferentes tipos de strings de entrada
+        if model_name.endswith('.joblib'):
+            patterns = [model_name]
+        else:
+            patterns = [
+                f"{model_name}.joblib",
+                f"{model_name}_*.joblib",
+                f"*{model_name}*.joblib"
+            ]
+
+        # Diretórios a verificar em ordem de prioridade
+        dirs_to_check = [
+            os.path.join(self.project_root, "models", "trained_models"),
+            os.path.join(self.project_root, "models", "trained"),
+            os.path.join(self.project_root, "models")
+        ]
+
+        # Verificar cada diretório
+        for directory in dirs_to_check:
+            if not os.path.exists(directory):
+                continue
+
+            for pattern in patterns:
+                matching_files = glob.glob(os.path.join(directory, pattern))
+                if matching_files:
+                    # Ordenar por data de modificação (mais recente primeiro)
+                    matching_files.sort(key=os.path.getmtime, reverse=True)
+                    logger.info(f"Encontrado arquivo de modelo {matching_files[0]}")
+                    return matching_files[0]
+
+        return None
+
+    def find_data_file(self, filename: str) -> Optional[str]:
+        """
+        Encontra arquivo de dados com nome específico.
+        Verifica múltiplos diretórios de dados.
+        """
+        # Diretórios a verificar em ordem de prioridade
+        dirs_to_check = [
+            os.path.join(self.project_root, "data", "processed"),
+            os.path.join(self.project_root, "data", "interim"),
+            os.path.join(self.project_root, "data", "raw"),
+            os.path.join(self.project_root, "data")
+        ]
+
+        # Primeiro, tentar correspondência exata
+        for directory in dirs_to_check:
+            if not os.path.exists(directory):
+                continue
+
+            full_path = os.path.join(directory, filename)
+            if os.path.exists(full_path):
+                logger.info(f"Encontrado arquivo de dados {full_path}")
+                return full_path
+
+        # Se não encontrar, tentar padrões
+        patterns = [
+            filename,
+            f"{filename}.*",
+            f"*{filename}*"
+        ]
+
+        for directory in dirs_to_check:
+            if not os.path.exists(directory):
+                continue
+
+            for pattern in patterns:
+                matching_files = glob.glob(os.path.join(directory, pattern))
+                if matching_files:
+                    # Ordenar por data de modificação (mais recente primeiro)
+                    matching_files.sort(key=os.path.getmtime, reverse=True)
+                    logger.info(f"Encontrado arquivo de dados {matching_files[0]}")
+                    return matching_files[0]
+
+        return None
 
 
-# Classe simples para substituir feature engineer caso ocorra erro no carregamento
-class SimpleFeatureEngineer:
-    """Versão simplificada do feature engineer para casos de falha."""
+# Classe FeatureEngineer simplificada (compatível com o que é usado em train_model.py)
+class FeatureEngineer:
+    """Versão simplificada do feature engineer para compatibilidade."""
 
     def __init__(self) -> None:
         self.feature_map: Dict[str, Any] = {}
@@ -99,17 +177,18 @@ class SimpleFeatureEngineer:
         self.selected_features: Optional[List[str]] = None
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apenas retorna o dataframe sem modificações."""
+        """Apenas retorna o dataframe sem modificações, a menos que seja substituído por uma versão carregada."""
         return df
 
     def fit_transform(self, df: pd.DataFrame, target_col: Optional[str] = None) -> pd.DataFrame:
-        """Apenas retorna o dataframe sem modificações."""
+        """Apenas retorna o dataframe sem modificações, a menos que seja substituído por uma versão carregada."""
         return df
 
 
 class ModelPredictor:
     """
     Classe para fazer predições usando modelos treinados de inadimplência.
+    Versão aprimorada com maior robustez na localização de arquivos e tratamento de erros.
     """
 
     def __init__(self, model_path: Optional[str] = None, feature_engineer_path: Optional[str] = None) -> None:
@@ -123,16 +202,36 @@ class ModelPredictor:
         self.model: Any = None
         self.feature_engineer: Any = None
         self.model_metadata: Dict[str, Any] = {}
-        self.threshold: float = 0.5
+        self.threshold: float = 0.8
+        self.model_details: Dict[str, Any] = {}
 
         # Inicializar o gerenciador de caminhos
         self.path_manager = PathManager()
 
+        # Carregar modelo e feature engineer automaticamente se os caminhos forem fornecidos
         if model_path:
             self.load_model(model_path)
+        else:
+            # Tentar encontrar o modelo mais recente
+            try:
+                latest_model = self.find_latest_model()
+                if latest_model:
+                    self.load_model(latest_model)
+            except Exception as e:
+                logger.warning(f"Não foi possível carregar modelo automaticamente: {str(e)}")
 
         if feature_engineer_path:
             self.load_feature_engineer(feature_engineer_path)
+        elif self.model is not None:
+            # Tentar encontrar feature engineer correspondente
+            try:
+                matching_fe = self.find_matching_feature_engineer(
+                    model_path or self.model_details.get('path', '')
+                )
+                if matching_fe:
+                    self.load_feature_engineer(matching_fe)
+            except Exception as e:
+                logger.warning(f"Não foi possível carregar feature engineer automaticamente: {str(e)}")
 
     def load_model(self, model_path: str) -> 'ModelPredictor':
         """
@@ -145,6 +244,7 @@ class ModelPredictor:
             self para encadeamento de métodos
         """
         # Verificar se é um caminho completo ou apenas nome de arquivo
+        original_path = model_path
         if not os.path.exists(model_path):
             # Tentar encontrar o arquivo no diretório de modelos
             model_file = self.path_manager.find_model_file(model_path)
@@ -153,33 +253,83 @@ class ModelPredictor:
             else:
                 raise FileNotFoundError(f"Modelo não encontrado: {model_path}")
 
-        logger.info(f"Carregando modelo de: {model_path}")
-        self.model = joblib.load(model_path)
+        try:
+            logger.info(f"Carregando modelo de: {model_path}")
+            self.model = joblib.load(model_path)
 
-        # Tentar carregar metadados
-        model_dir = os.path.dirname(model_path)
-        model_name = os.path.basename(model_path).split('_')[0]
-        timestamp = '_'.join(os.path.basename(model_path).split('_')[1:]).replace('.joblib', '')
+            # Armazenar detalhes do modelo
+            self.model_details = {
+                'path': model_path,
+                'filename': os.path.basename(model_path),
+                'type': type(self.model).__name__,
+                'loaded_at': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
 
-        metadata_path = os.path.join(model_dir, f"model_metadata_{timestamp}.json")
-        if os.path.exists(metadata_path):
-            try:
-                with open(metadata_path, 'r') as f:
-                    self.model_metadata = json.load(f)
+            # Tentar carregar metadados
+            self._load_model_metadata(model_path)
 
-                # Extrair threshold para este modelo
-                if 'thresholds' in self.model_metadata and model_name in self.model_metadata['thresholds']:
-                    self.threshold = self.model_metadata['thresholds'][model_name]
-                    logger.info(f"Threshold carregado: {self.threshold}")
-            except (json.JSONDecodeError, IOError) as e:
-                logger.warning(f"Erro ao carregar metadados: {str(e)}")
+            # Verificar se o modelo tem método predict_proba
+            if not hasattr(self.model, 'predict_proba'):
+                logger.warning(f"AVISO: O modelo não tem método predict_proba(). Algumas funcionalidades podem não funcionar corretamente.")
 
-        # Se o modelo tiver atributo threshold, usar esse
-        if hasattr(self.model, 'threshold'):
-            self.threshold = self.model.threshold
-            logger.info(f"Usando threshold interno do modelo: {self.threshold}")
+            logger.info(f"Modelo {self.model_details['type']} carregado com sucesso.")
+            return self
 
-        return self
+        except Exception as e:
+            logger.error(f"Erro ao carregar modelo: {str(e)}")
+            logger.debug(traceback.format_exc())
+            raise
+
+    def _load_model_metadata(self, model_path: str) -> None:
+        """
+        Carrega metadados do modelo a partir de arquivo JSON correspondente.
+
+        Args:
+            model_path: Caminho do modelo
+        """
+        try:
+            model_dir = os.path.dirname(model_path)
+            model_name = os.path.basename(model_path).split('_')[0]
+
+            # Extrair timestamp do nome do arquivo
+            timestamp_parts = os.path.basename(model_path).split('_')[1:]
+            timestamp = '_'.join(timestamp_parts).replace('.joblib', '')
+
+            # Possíveis padrões de nomes de arquivos de metadados
+            metadata_patterns = [
+                os.path.join(model_dir, f"model_metadata_{timestamp}.json"),
+                os.path.join(model_dir, f"metadata_{timestamp}.json"),
+                os.path.join(model_dir, "model_metadata.json")
+            ]
+
+            for pattern in metadata_patterns:
+                if os.path.exists(pattern):
+                    with open(pattern, 'r') as f:
+                        self.model_metadata = json.load(f)
+
+                    # Extrair threshold para este modelo
+                    if 'thresholds' in self.model_metadata and model_name in self.model_metadata['thresholds']:
+                        self.threshold = self.model_metadata['thresholds'][model_name]
+                        logger.info(f"Threshold carregado: {self.threshold}")
+                    elif 'best_threshold' in self.model_metadata:
+                        self.threshold = self.model_metadata['best_threshold']
+                        logger.info(f"Threshold carregado: {self.threshold}")
+
+                    # Armazenar metadados nos detalhes do modelo
+                    self.model_details['metadata'] = self.model_metadata
+                    logger.info(f"Metadados carregados de: {pattern}")
+                    break
+            else:
+                logger.info("Nenhum arquivo de metadados encontrado.")
+
+            # Se o modelo tiver atributo threshold, usar esse
+            if hasattr(self.model, 'threshold'):
+                self.threshold = self.model.threshold
+                logger.info(f"Usando threshold interno do modelo: {self.threshold}")
+
+        except Exception as e:
+            logger.warning(f"Erro ao carregar metadados: {str(e)}")
+            logger.debug(traceback.format_exc())
 
     def load_feature_engineer(self, path: str) -> 'ModelPredictor':
         """
@@ -204,18 +354,23 @@ class ModelPredictor:
 
         try:
             self.feature_engineer = joblib.load(path)
-        except (AttributeError, ImportError) as e:
+            logger.info(f"Feature engineer carregado com sucesso: {type(self.feature_engineer).__name__}")
+            return self
+        except Exception as e:
             error_msg = str(e)
+            logger.warning(f"Erro ao carregar feature engineer: {error_msg}")
+
+            # Tratar caso específico de ClassNotFoundError
             if "Can't get attribute 'FeatureEngineer'" in error_msg:
-                logger.warning("Erro ao carregar feature engineer: Classe FeatureEngineer não encontrada")
                 logger.warning("Usando um feature engineer simplificado como substituto")
-                self.feature_engineer = SimpleFeatureEngineer()
+                self.feature_engineer = FeatureEngineer()
             else:
                 # Se for outro tipo de erro, relançar
-                logger.error(f"Erro desconhecido ao carregar feature engineer: {error_msg}")
+                logger.error(f"Erro desconhecido ao carregar feature engineer")
+                logger.debug(traceback.format_exc())
                 raise
 
-        return self
+            return self
 
     def find_latest_model(self, model_type: str = "best_model") -> str:
         """
@@ -227,27 +382,40 @@ class ModelPredictor:
         Returns:
             Caminho para o modelo mais recente
         """
-        # Diretório de modelos treinados
-        models_dir = self.path_manager.get_model_path("trained")
+        # Diretórios onde procurar modelos, em ordem de prioridade
+        dirs_to_check = [
+            self.path_manager.get_model_path("trained_models"),
+            self.path_manager.get_model_path("trained"),
+            os.path.join(self.path_manager.project_root, "models"),
+        ]
 
-        # Procurar modelos
-        model_pattern = f"{model_type}_*.joblib"
-        matching_files = glob.glob(os.path.join(models_dir, model_pattern))
+        # Padrões de busca para diferentes tipos de modelos
+        patterns = [
+            f"{model_type}_*.joblib",  # Padrão específico
+            "*.joblib"                 # Qualquer modelo como fallback
+        ]
 
-        if not matching_files:
-            # Tentar outros padrões
-            model_pattern = "*.joblib"
-            matching_files = glob.glob(os.path.join(models_dir, model_pattern))
+        for directory in dirs_to_check:
+            if not os.path.exists(directory):
+                logger.debug(f"Diretório não encontrado: {directory}")
+                continue
 
-        if not matching_files:
-            raise FileNotFoundError(f"Nenhum modelo '{model_type}' encontrado em {models_dir}")
+            for pattern in patterns:
+                matching_files = glob.glob(os.path.join(directory, pattern))
 
-        # Ordenar por data de modificação (mais recente primeiro)
-        matching_files.sort(key=os.path.getmtime, reverse=True)
-        latest_model = matching_files[0]
+                if matching_files:
+                    # Ordenar por data de modificação (mais recente primeiro)
+                    matching_files.sort(key=os.path.getmtime, reverse=True)
+                    latest_model = matching_files[0]
 
-        logger.info(f"Modelo mais recente encontrado: {latest_model}")
-        return latest_model
+                    logger.info(f"Modelo mais recente encontrado: {latest_model}")
+                    return latest_model
+
+        # Se não encontrou nenhum modelo
+        checked_dirs = "\n- ".join(dirs_to_check)
+        error_msg = f"Nenhum modelo '{model_type}' encontrado. Diretórios verificados:\n- {checked_dirs}"
+        logger.error(error_msg)
+        raise FileNotFoundError(error_msg)
 
     def find_matching_feature_engineer(self, model_path_or_name: str) -> Optional[str]:
         """
@@ -276,35 +444,42 @@ class ModelPredictor:
             logger.info(f"Recebido nome de classe ou formato não padrão: {model_path_or_name}")
             timestamp = None
 
-        # Procurar feature engineer correspondente
-        preprocessing_dir = self.path_manager.get_model_path("preprocessing")
+        # Diretórios onde procurar feature engineers
+        dirs_to_check = [
+            self.path_manager.get_model_path("preprocessing"),
+            os.path.join(self.path_manager.project_root, "models", "preprocessing"),
+            os.path.join(self.path_manager.project_root, "models")
+        ]
 
         # Se temos um timestamp, primeiro tentamos encontrar um feature engineer com este timestamp
         if timestamp:
-            feature_path = os.path.join(preprocessing_dir, f"feature_engineer_{timestamp}.joblib")
+            for directory in dirs_to_check:
+                if not os.path.exists(directory):
+                    continue
 
-            if os.path.exists(feature_path):
-                logger.info(f"Feature engineer correspondente encontrado: {feature_path}")
-                return feature_path
+                feature_path = os.path.join(directory, f"feature_engineer_{timestamp}.joblib")
+                if os.path.exists(feature_path):
+                    logger.info(f"Feature engineer correspondente encontrado: {feature_path}")
+                    return feature_path
 
         # Se não encontrar com o timestamp específico, procurar o mais recente
-        try:
-            feature_files = [f for f in os.listdir(preprocessing_dir) if
+        for directory in dirs_to_check:
+            if not os.path.exists(directory):
+                continue
+
+            feature_files = [f for f in os.listdir(directory) if
                              f.startswith('feature_engineer_') and f.endswith('.joblib')]
-        except (FileNotFoundError, PermissionError) as e:
-            logger.warning(f"Erro ao acessar diretório de preprocessamento: {str(e)}")
-            feature_files = []
 
-        if not feature_files:
-            logger.warning("Nenhum feature engineer encontrado. A preparação básica dos dados será usada.")
-            return None
+            if feature_files:
+                # Ordenar por nome (assumindo formato com timestamp)
+                feature_files.sort(reverse=True)
+                latest_feature = os.path.join(directory, feature_files[0])
 
-        # Ordenar por timestamp e pegar o mais recente
-        feature_files.sort(reverse=True)
-        latest_feature = os.path.join(preprocessing_dir, feature_files[0])
+                logger.info(f"Usando feature engineer mais recente: {latest_feature}")
+                return latest_feature
 
-        logger.info(f"Usando feature engineer mais recente: {latest_feature}")
-        return latest_feature
+        logger.warning("Nenhum feature engineer encontrado. A preparação básica dos dados será usada.")
+        return None
 
     def _check_non_numeric_cols(self, df: pd.DataFrame) -> List[str]:
         """
@@ -339,53 +514,62 @@ class ModelPredictor:
         Returns:
             DataFrame com features alinhadas com o modelo
         """
+        if self.model is None:
+            logger.warning("Modelo não carregado - não é possível alinhar features")
+            return X
+
         # Tentar extrair nomes de features do modelo
         model_features = None
 
-        # Para modelos LightGBM
-        if hasattr(self.model, 'feature_name_'):
-            model_features = self.model.feature_name_
-            logger.info(f"Extraídas {len(model_features)} features do modelo LightGBM")
+        # Explorar diferentes atributos para extrair nomes de features
+        model_attrs_to_check = [
+            'feature_name_',       # LightGBM
+            'feature_names_in_',   # scikit-learn
+            'feature_names',       # XGBoost
+            '_feature_names',      # Modelos customizados
+        ]
 
-        # Para modelos com atributo feature_names_in_
-        elif hasattr(self.model, 'feature_names_in_'):
-            model_features = self.model.feature_names_in_
-            logger.info(f"Extraídas {len(model_features)} features do modelo sklearn")
-
-        # Para pipelines sklearn
-        elif hasattr(self.model, 'named_steps'):
+        # Verificar pipeline e steps
+        if hasattr(self.model, 'named_steps'):
             for step_name, step in self.model.named_steps.items():
-                if hasattr(step, 'feature_names_in_'):
-                    model_features = step.feature_names_in_
-                    logger.info(f"Extraídas {len(model_features)} features do passo {step_name} do pipeline")
+                for attr in model_attrs_to_check:
+                    if hasattr(step, attr):
+                        model_features = getattr(step, attr)
+                        logger.info(f"Extraídas {len(model_features)} features do passo {step_name} do pipeline")
+                        break
+                if model_features is not None:
+                    break
+        else:
+            # Verificar o modelo diretamente
+            for attr in model_attrs_to_check:
+                if hasattr(self.model, attr):
+                    model_features = getattr(self.model, attr)
+                    logger.info(f"Extraídas {len(model_features)} features diretamente do modelo")
                     break
 
-        # Se não conseguimos extrair as features do modelo, verificar incompatibilidade
+        # Se não conseguimos extrair as features do modelo
         if model_features is None:
             # Verificar se podemos obter o número de features que o modelo espera
             n_features_expected = None
 
-            try:
-                # Tentativa 1: Para LightGBM
-                if hasattr(self.model, 'n_features_'):
-                    n_features_expected = self.model.n_features_
-                # Tentativa 2: Para XGBoost
-                elif hasattr(self.model, 'n_features_in_'):
-                    n_features_expected = self.model.n_features_in_
-                # Tentativa 3: Para GBM e outros
-                elif hasattr(self.model, '_n_features'):
-                    n_features_expected = self.model._n_features
-            except Exception as e:
-                logger.warning(f"Erro ao tentar obter número de features do modelo: {str(e)}")
-                pass
+            # Verificar atributos possíveis para número de features
+            for attr in ['n_features_', 'n_features_in_', '_n_features']:
+                if hasattr(self.model, attr):
+                    n_features_expected = getattr(self.model, attr)
+                    break
 
             if n_features_expected and X.shape[1] != n_features_expected:
                 logger.warning(f"⚠️ ALERTA DE INCOMPATIBILIDADE: Modelo espera {n_features_expected} features, "
                                f"mas os dados têm {X.shape[1]} features.")
                 logger.warning("Não foi possível extrair nomes de features do modelo para alinhamento automático.")
-                logger.warning("Continuando com as features disponíveis, mas a predição pode falhar.")
 
-            return X
+            # Verificar metadados para features
+            if 'selected_features' in self.model_metadata:
+                model_features = self.model_metadata['selected_features']
+                logger.info(f"Usando lista de {len(model_features)} features dos metadados")
+            else:
+                logger.warning("Continuando com as features disponíveis, mas a predição pode falhar.")
+                return X
 
         # Comparar com as features disponíveis
         input_features = X.columns.tolist()
@@ -398,14 +582,10 @@ class ModelPredictor:
 
         if extra_features:
             logger.warning(f"Encontradas {len(extra_features)} features extras nos dados que serão removidas")
-            if len(extra_features) < 10:
-                logger.warning(f"Features extras: {extra_features}")
             X = X.drop(columns=extra_features)
 
         if missing_features:
             logger.warning(f"Faltam {len(missing_features)} features requeridas pelo modelo nos dados")
-            if len(missing_features) < 10:
-                logger.warning(f"Features ausentes: {missing_features}")
 
             # Adicionar features ausentes com valor 0
             for feature in missing_features:
@@ -635,79 +815,7 @@ class ModelPredictor:
 
         return results
 
-    def predict_and_explain(self, data: pd.DataFrame, target_col: Optional[str] = None,
-                            n_features: int = 10) -> pd.DataFrame:
-        """
-        Faz predições e gera explicações para cada instância.
-
-        Args:
-            data: DataFrame com features
-            target_col: Nome da coluna alvo (se disponível)
-            n_features: Número de features a incluir na explicação
-
-        Returns:
-            DataFrame com predições e explicações
-        """
-        try:
-            import shap
-        except ImportError:
-            logger.error("Biblioteca SHAP não instalada. Instale com: pip install shap")
-            return self.predict(data, target_col, output_probabilities=False)
-
-        # Obter predições
-        results = self.predict(data, target_col, output_probabilities=False)
-
-        # Preparar features
-        X = self._prepare_features(data, target_col)
-
-        # Criar o explicador SHAP
-        try:
-            # Tentar usar TreeExplainer para modelos baseados em árvores
-            if hasattr(self.model, 'estimators_') or hasattr(self.model, 'named_steps') and \
-                    hasattr(self.model.named_steps.get('classifier', None), 'estimators_'):
-                explainer = shap.TreeExplainer(self.model)
-                shap_values = explainer.shap_values(X)
-
-                # Para modelos que retornam duas classes (0 e 1), pegamos os valores da classe 1
-                if isinstance(shap_values, list) and len(shap_values) > 1:
-                    shap_values = shap_values[1]
-            else:
-                # Usar KernelExplainer como fallback
-                logger.info("Usando KernelExplainer para explicações SHAP")
-                # Criar um subconjunto representativo para referência
-                background = shap.kmeans(X, 10)
-                explainer = shap.KernelExplainer(self.model.predict_proba, background)
-                shap_values = explainer.shap_values(X, nsamples=100)
-
-                # Extrair valores para a classe positiva
-                if isinstance(shap_values, list) and len(shap_values) > 1:
-                    shap_values = shap_values[1]
-
-            # Adicionar explicações ao DataFrame de resultados
-            for i, row in enumerate(shap_values):
-                # Mapear valores SHAP com nomes de features
-                feature_importance = {col: value for col, value in zip(X.columns, row)}
-
-                # Ordenar por importância absoluta
-                sorted_features = sorted(feature_importance.items(), key=lambda x: abs(x[1]), reverse=True)
-
-                # Adicionar as top N features e seus valores SHAP
-                for idx, (feature, value) in enumerate(sorted_features[:n_features]):
-                    results.loc[i, f"top{idx + 1}_feature"] = feature
-                    results.loc[i, f"top{idx + 1}_importance"] = value
-                    results.loc[i, f"top{idx + 1}_contribuicao"] = "Positiva" if value > 0 else "Negativa"
-
-            logger.info(f"Explicações SHAP geradas com sucesso para {len(data)} exemplos")
-
-        except Exception as e:
-            logger.error(f"Erro ao gerar explicações SHAP: {str(e)}")
-            logger.error("Retornando apenas predições sem explicações")
-            import traceback
-            traceback.print_exc()
-
-        return results
-
-    def plot_prediction_distribution(self, results: pd.DataFrame, output_dir: Optional[str] = None) -> None:
+    def plot_prediction_distribution(self, results: pd.DataFrame, output_dir: Optional[str] = None, target_col=None) -> None:
         """
         Gera visualizações da distribuição de probabilidades preditas.
 
@@ -788,37 +896,42 @@ class ModelPredictor:
             plt.close()
             logger.info(f"Gráfico de distribuição por acerto/erro salvo em: {compare_path}")
 
+        # 4. Adicionar gráfico de calibração se tiver dados reais
+        if 'inadimplente_previsto' in results.columns and target_col in results.columns:
+            try:
+                from sklearn.calibration import calibration_curve
+
+                prob_true, prob_pred = calibration_curve(
+                    results[target_col],
+                    results['probabilidade_inadimplencia'],
+                    n_bins=10
+                )
+
+                plt.figure(figsize=(10, 6))
+                plt.plot(prob_pred, prob_true, marker='o')
+                plt.plot([0, 1], [0, 1], 'k--')
+                plt.title('Curva de Calibração do Modelo')
+                plt.xlabel('Probabilidade Média Predita')
+                plt.ylabel('Proporção Real de Positivos')
+                plt.grid(True, alpha=0.3)
+
+                calibration_path = os.path.join(output_dir, f"calibration_curve_{timestamp}.png")
+                plt.savefig(calibration_path, dpi=300, bbox_inches='tight')
+                plt.close()
+                logger.info(f"Curva de calibração salva em: {calibration_path}")
+            except Exception as e:
+                logger.warning(f"Erro ao gerar curva de calibração: {str(e)}")
 
 def main() -> None:
     """
     Função principal para fazer predições usando modelos treinados.
     """
     import argparse
-    import glob
-
-    # Inicializar path manager para usar na busca do arquivo padrão
-    path_manager = PathManager()
-
-    # Encontrar algum arquivo de dados de teste por padrão
-    default_data_file = None
-    possible_data_dirs = ["processed", "interim", "raw"]
-    for subdir in possible_data_dirs:
-        try:
-            test_files = glob.glob(os.path.join(path_manager.get_data_path(subdir), "test_*.csv"))
-            if test_files:
-                default_data_file = max(test_files, key=os.path.getmtime)  # O mais recente
-                break
-        except (FileNotFoundError, PermissionError):
-            continue
-
-    # Se não encontrou nenhum, usar um placeholder
-    if not default_data_file:
-        default_data_file = "test_data.csv"  # Nome de placeholder
 
     # Definir argumentos do comando
     parser = argparse.ArgumentParser(description="Fazer predições usando modelos treinados de inadimplência")
-    parser.add_argument('--data', type=str, default=default_data_file,
-                        help=f'Caminho para arquivo de dados (padrão: {default_data_file})')
+    parser.add_argument('--data', type=str, required=False,
+                        help='Caminho para arquivo de dados (CSV ou Excel)')
     parser.add_argument('--model', type=str, default=None,
                         help='Caminho para modelo treinado (se None, usa o melhor modelo mais recente)')
     parser.add_argument('--feature_engineer', type=str, default=None,
@@ -831,6 +944,10 @@ def main() -> None:
                         help='Gerar explicações para as predições')
     parser.add_argument('--probabilities_only', action='store_true',
                         help='Retornar apenas probabilidades sem classificação binária')
+    parser.add_argument('--threshold', type=float, default=None,
+                        help='Threshold para classificação (se None, usa o definido no modelo ou padrão)')
+    parser.add_argument('--plot', action='store_true',
+                        help='Gerar gráficos de visualização das predições')
 
     args = parser.parse_args()
 
@@ -838,15 +955,38 @@ def main() -> None:
         # Criar preditor
         predictor = ModelPredictor()
 
-        # Carregar modelo
+        # Iniciar o gerenciador de caminho
+        path_manager = PathManager()
+
+        # Se o threshold foi especificado, definir explicitamente
+        if args.threshold is not None:
+            predictor.threshold = args.threshold
+            logger.info(f"Usando threshold definido manualmente: {args.threshold}")
+
+        # Encontrar melhor modelo automaticamente se não especificado
         if args.model:
             predictor.load_model(args.model)
         else:
-            # Encontrar e carregar o melhor modelo mais recente
             try:
-                model_path = predictor.find_latest_model()
+                # Tentar encontrar o melhor modelo mais recente
+                logger.info("Buscando o modelo mais recente...")
+                try:
+                    model_path = predictor.find_latest_model("best_model")
+                except FileNotFoundError:
+                    # Se não encontrar best_model, tentar qualquer modelo
+                    all_models = glob.glob(os.path.join(path_manager.get_model_path("trained_models"), "*.joblib"))
+                    all_models += glob.glob(os.path.join(path_manager.get_model_path("trained"), "*.joblib"))
+
+                    if all_models:
+                        # Ordenar por data de modificação (mais recente primeiro)
+                        all_models.sort(key=os.path.getmtime, reverse=True)
+                        model_path = all_models[0]
+                        logger.info(f"Usando modelo mais recente encontrado: {os.path.basename(model_path)}")
+                    else:
+                        raise FileNotFoundError("Nenhum modelo encontrado. Especifique um caminho de modelo usando --model")
+
                 predictor.load_model(model_path)
-            except FileNotFoundError as e:
+            except Exception as e:
                 logger.error(f"Erro ao encontrar modelo: {str(e)}")
                 logger.error("Especifique um caminho de modelo usando --model")
                 return
@@ -857,25 +997,46 @@ def main() -> None:
         else:
             # Tentar encontrar feature engineer correspondente
             try:
-                # Primeiro tentar usar o caminho do modelo
-                feature_path = predictor.find_matching_feature_engineer(model_path)
+                feature_path = predictor.find_matching_feature_engineer(
+                    args.model or predictor.model_details.get('path', '')
+                )
+                if feature_path:
+                    predictor.load_feature_engineer(feature_path)
             except Exception as e:
-                logger.warning(f"Erro ao buscar feature engineer com caminho do modelo: {str(e)}")
-                # Se falhar, usar o nome da classe como fallback
-                logger.info("Tentando encontrar feature engineer usando o nome da classe do modelo")
-                feature_path = predictor.find_matching_feature_engineer(predictor.model.__class__.__name__)
+                logger.warning(f"Aviso: {str(e)}")
+                logger.info("Continuando sem feature engineering personalizado.")
 
-            if feature_path:
-                predictor.load_feature_engineer(feature_path)
+        # Verificar se o arquivo de dados foi fornecido ou tentar encontrar um padrão
+        if not args.data:
+            # Tentar encontrar arquivo de dados padrão
+            possible_data_files = []
+            for subdir in ['processed', 'interim', 'raw']:
+                try:
+                    data_dir = path_manager.get_data_path(subdir)
+                    if os.path.exists(data_dir):
+                        # Procurar por arquivos com padrões comuns
+                        for pattern in ['test_*.csv', 'data_*.csv', '*.csv']:
+                            matching_files = glob.glob(os.path.join(data_dir, pattern))
+                            possible_data_files.extend(matching_files)
+                except Exception:
+                    continue
+
+            if possible_data_files:
+                # Usar o arquivo mais recente
+                possible_data_files.sort(key=os.path.getmtime, reverse=True)
+                args.data = possible_data_files[0]
+                logger.info(f"Usando arquivo de dados encontrado automaticamente: {args.data}")
             else:
-                logger.warning("Nenhum feature engineer encontrado. Modelos podem exigir features específicas.")
+                logger.error("Nenhum arquivo de dados fornecido e não foi possível encontrar automaticamente.")
+                logger.error("Especifique um arquivo de dados usando --data")
+                return
 
         # Definir caminho de saída padrão se não fornecido
         if not args.output:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             args.output = path_manager.get_report_path("predictions", f"predictions_{timestamp}.csv")
 
-        # Fazer predições
+        # Fazer predições com base nos parâmetros fornecidos
         if args.explain:
             # Localizar o arquivo de dados
             data_path = args.data
@@ -892,33 +1053,127 @@ def main() -> None:
             else:
                 raise ValueError(f"Formato de arquivo não suportado: {data_path}")
 
+            logger.info(f"Gerando predições com explicações para {len(data)} registros...")
             results = predictor.predict_and_explain(
                 data=data,
                 target_col=args.target
             )
-
-            # Salvar resultados
-            os.makedirs(os.path.dirname(args.output), exist_ok=True)
-            results.to_csv(args.output, index=False)
         else:
+            logger.info(f"Gerando predições em lote para {args.data}...")
             results = predictor.batch_predict(
                 data_path=args.data,
                 output_path=args.output,
                 target_col=args.target
             )
 
-        # Plotar distribuição
-        output_dir = os.path.dirname(args.output)
-        predictor.plot_prediction_distribution(results, output_dir)
+        # Gerar visualizações se solicitado
+        if args.plot:
+            logger.info("Gerando visualizações...")
+            output_dir = os.path.dirname(args.output)
+            predictor.plot_prediction_distribution(results, output_dir)
 
-        print(f"Predição concluída com sucesso! Resultados salvos em: {args.output}")
+        # Exibir resumo dos resultados
+        if 'inadimplente_previsto' in results.columns:
+            n_total = len(results)
+            n_inadimplentes = results['inadimplente_previsto'].sum()
+            percent_inadimplentes = 100 * n_inadimplentes / n_total
+
+            logger.info(f"\nResumo das Predições:")
+            logger.info(f"Total de registros: {n_total}")
+            logger.info(f"Classificados como inadimplentes: {n_inadimplentes} ({percent_inadimplentes:.2f}%)")
+            logger.info(f"Threshold utilizado: {predictor.threshold:.4f}")
+
+            if args.target and args.target in results.columns:
+                from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+                accuracy = accuracy_score(results[args.target], results['inadimplente_previsto'])
+                precision = precision_score(results[args.target], results['inadimplente_previsto'], zero_division=0)
+                recall = recall_score(results[args.target], results['inadimplente_previsto'], zero_division=0)
+                f1 = f1_score(results[args.target], results['inadimplente_previsto'], zero_division=0)
+
+                logger.info(f"\nMétricas de desempenho:")
+                logger.info(f"Acurácia: {accuracy:.4f}")
+                logger.info(f"Precisão: {precision:.4f}")
+                logger.info(f"Recall: {recall:.4f}")
+                logger.info(f"F1-Score: {f1:.4f}")
+
+        print(f"\nPredição concluída com sucesso! Resultados salvos em: {args.output}")
 
     except Exception as e:
         logger.error(f"Erro durante a predição: {str(e)}")
-        import traceback
-        traceback.print_exc()
+        logger.debug(traceback.format_exc())
         raise
 
 
 if __name__ == "__main__":
     main()
+
+    def predict_and_explain(self, data: pd.DataFrame, target_col: Optional[str] = None,
+                            n_features: int = 10) -> pd.DataFrame:
+        """
+        Faz predições e gera explicações para cada instância.
+
+        Args:
+            data: DataFrame com features
+            target_col: Nome da coluna alvo (se disponível)
+            n_features: Número de features a incluir na explicação
+
+        Returns:
+            DataFrame com predições e explicações
+        """
+        try:
+            import shap
+        except ImportError:
+            logger.error("Biblioteca SHAP não instalada. Instale com: pip install shap")
+            return self.predict(data, target_col, output_probabilities=False)
+
+        # Obter predições
+        results = self.predict(data, target_col, output_probabilities=False)
+
+        # Preparar features
+        X = self._prepare_features(data, target_col)
+
+        # Criar o explicador SHAP
+        try:
+            # Tentar usar TreeExplainer para modelos baseados em árvores
+            if hasattr(self.model, 'estimators_') or hasattr(self.model, 'named_steps') and \
+                    hasattr(self.model.named_steps.get('classifier', None), 'estimators_'):
+                explainer = shap.TreeExplainer(self.model)
+                shap_values = explainer.shap_values(X)
+
+                # Para modelos que retornam duas classes (0 e 1), pegamos os valores da classe 1
+                if isinstance(shap_values, list) and len(shap_values) > 1:
+                    shap_values = shap_values[1]
+            else:
+                # Usar KernelExplainer como fallback
+                logger.info("Usando KernelExplainer para explicações SHAP")
+                # Criar um subconjunto representativo para referência
+                background = shap.kmeans(X, 10)
+                explainer = shap.KernelExplainer(self.model.predict_proba, background)
+                shap_values = explainer.shap_values(X, nsamples=100)
+
+                # Extrair valores para a classe positiva
+                if isinstance(shap_values, list) and len(shap_values) > 1:
+                    shap_values = shap_values[1]
+
+            # Adicionar explicações ao DataFrame de resultados
+            for i, row in enumerate(shap_values):
+                # Mapear valores SHAP com nomes de features
+                feature_importance = {col: value for col, value in zip(X.columns, row)}
+
+                # Ordenar por importância absoluta
+                sorted_features = sorted(feature_importance.items(), key=lambda x: abs(x[1]), reverse=True)
+
+                # Adicionar as top N features e seus valores SHAP
+                for idx, (feature, value) in enumerate(sorted_features[:n_features]):
+                    results.loc[i, f"top{idx + 1}_feature"] = feature
+                    results.loc[i, f"top{idx + 1}_importance"] = value
+                    results.loc[i, f"top{idx + 1}_contribuicao"] = "Positiva" if value > 0 else "Negativa"
+
+            logger.info(f"Explicações SHAP geradas com sucesso para {len(data)} exemplos")
+
+        except Exception as e:
+            logger.error(f"Erro ao gerar explicações SHAP: {str(e)}")
+            logger.error("Retornando apenas predições sem explicações")
+            logger.debug(traceback.format_exc())
+
+        return results
