@@ -1,0 +1,73 @@
+{
+    "timestamp": "20250303_004036",
+    "models": [
+        "CalibratedLogisticRegression",
+        "CalibratedRandomForest",
+        "CalibratedGradientBoosting",
+        "CalibratedSVM",
+        "CalibratedNaiveBayes",
+        "CalibratedKNN",
+        "CalibratedEnsemble"
+    ],
+    "thresholds": {
+        "CalibratedLogisticRegression": 0.01,
+        "CalibratedRandomForest": 0.45,
+        "CalibratedGradientBoosting": 0.41000000000000003,
+        "CalibratedSVM": 0.31,
+        "CalibratedNaiveBayes": 0.52,
+        "CalibratedKNN": 0.52,
+        "CalibratedEnsemble": 0.44
+    },
+    "best_model": "CalibratedGradientBoosting",
+    "evaluation_summary": {
+        "CalibratedLogisticRegression": {
+            "auc": 0.9768537051293018,
+            "f1_score": 0.8267659530458165,
+            "brier_score": 0.4431038111495439,
+            "log_loss": 2.0155637204929544,
+            "threshold": 0.01
+        },
+        "CalibratedRandomForest": {
+            "auc": 0.9945429125375238,
+            "f1_score": 0.9674467710716173,
+            "brier_score": 0.02879725219789503,
+            "log_loss": 0.09612146649120143,
+            "threshold": 0.45
+        },
+        "CalibratedGradientBoosting": {
+            "auc": 0.9995186773708714,
+            "f1_score": 0.9903990134766142,
+            "brier_score": 0.008386661517221693,
+            "log_loss": 0.028643550055644507,
+            "threshold": 0.41000000000000003
+        },
+        "CalibratedSVM": {
+            "auc": 0.9999883508274579,
+            "f1_score": 0.9983258436866684,
+            "brier_score": 0.009224348138406268,
+            "log_loss": 0.031729345198900805,
+            "threshold": 0.31
+        },
+        "CalibratedNaiveBayes": {
+            "auc": 0.874991161292162,
+            "f1_score": 0.8374538745387454,
+            "brier_score": 0.1305467076223254,
+            "log_loss": 0.4051156139789921,
+            "threshold": 0.52
+        },
+        "CalibratedKNN": {
+            "auc": 0.9493085645857008,
+            "f1_score": 0.8918113273715589,
+            "brier_score": 0.08878849995683925,
+            "log_loss": 0.2914808589813239,
+            "threshold": 0.52
+        },
+        "CalibratedEnsemble": {
+            "auc": 0.9991382463514873,
+            "f1_score": 0.9874966746475127,
+            "brier_score": 0.04573873490607116,
+            "log_loss": 0.20468196086901616,
+            "threshold": 0.44
+        }
+    }
+}

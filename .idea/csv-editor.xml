@@ -45,6 +45,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/reports/predictions/predictions_20250302_235216.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/reports/predictions/predictions_20250302_235558.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>
