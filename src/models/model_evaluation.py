@@ -12,15 +12,14 @@ import seaborn as sns
 import joblib
 import json
 from datetime import datetime
-from typing import Dict, List, Tuple, Any, Optional, Union
 import logging
 
 # Métricas e validação
 from sklearn.metrics import (
     roc_curve, precision_recall_curve, roc_auc_score,
-    confusion_matrix, classification_report, f1_score,
-    precision_score, recall_score, average_precision_score
+    confusion_matrix, average_precision_score
 )
+from sklearn.calibration import calibration_curve  # Importação para a curva de calibração otimizada
 
 # Configurar logger
 logger = logging.getLogger(__name__)
@@ -44,7 +43,7 @@ class ModelEvaluator:
     relevantes para o contexto financeiro e impacto de negócio.
     """
 
-    def __init__(self, cost_fn_ratio=5.0, approval_target=None, default_threshold=None):
+    def __init__(self, cost_fn_ratio=5.0, approval_target=None, default_threshold=None, positive_class='inadimplente'):
         """
         Inicializa o avaliador de modelos.
 
@@ -53,6 +52,7 @@ class ModelEvaluator:
                           classificado como adimplente) comparado a um falso positivo
             approval_target: Taxa alvo de aprovação (0-1) para otimização do threshold
             default_threshold: Threshold padrão para classificação (0.5)
+            positive_class: Define qual é a classe positiva ('inadimplente' ou 'adimplente')
         """
         self.cost_fn_ratio = cost_fn_ratio
         self.approval_target = approval_target
@@ -61,6 +61,12 @@ class ModelEvaluator:
         self.model_results = {}
         self.best_model = None
         self.best_model_name = None
+        self.positive_class = positive_class
+
+        # Validar classe positiva
+        if self.positive_class not in ['inadimplente', 'adimplente']:
+            logger.warning(f"Classe positiva '{positive_class}' não reconhecida. Usando 'inadimplente'.")
+            self.positive_class = 'inadimplente'
 
         # Configurar diretório de saída
         project_root = get_project_root()
@@ -150,7 +156,7 @@ class ModelEvaluator:
         return self
 
     def evaluate_model(self, name, X_test, y_test, threshold=None,
-                       plot_curves=True, save_plots=True):
+                       plot_curves=True, save_plots=True, store_predictions=False):
         """
         Avalia um modelo específico no conjunto de teste.
 
@@ -161,10 +167,21 @@ class ModelEvaluator:
             threshold: Threshold para classificação (se None, usa o definido no modelo)
             plot_curves: Se True, gera gráficos
             save_plots: Se True, salva os gráficos gerados
+            store_predictions: Se True, armazena as predições para análises adicionais
 
         Returns:
             Dicionário com métricas de avaliação
         """
+        # Validar entradas
+        if not isinstance(X_test, (pd.DataFrame, np.ndarray)):
+            raise TypeError("X_test deve ser um DataFrame pandas ou array numpy")
+
+        if not isinstance(y_test, (pd.Series, np.ndarray, list)):
+            raise TypeError("y_test deve ser uma Series pandas, array numpy ou lista")
+
+        if len(X_test) != len(y_test):
+            raise ValueError(f"X_test ({len(X_test)} amostras) e y_test ({len(y_test)} amostras) devem ter o mesmo número de amostras")
+
         if name not in self.models:
             raise ValueError(f"Modelo '{name}' não encontrado.")
 
@@ -190,11 +207,24 @@ class ModelEvaluator:
         auc = roc_auc_score(y_test, y_proba)
         avg_precision = average_precision_score(y_test, y_proba)
 
-        # Métricas de negócio
-        aprovacao_rate = (tp + fp) / (tp + tn + fp + fn)
-        inadimplencia_portfolio = (fn) / (tp + fn) if (tp + fn) > 0 else 0
+        # Métricas de negócio - CORRIGIDAS de acordo com a interpretação da classe positiva
+        if self.positive_class == 'inadimplente':
+            # TP = Inadimplente classificado como inadimplente (correto)
+            # TN = Adimplente classificado como adimplente (correto)
+            # FP = Adimplente classificado como inadimplente (erro tipo I)
+            # FN = Inadimplente classificado como adimplente (erro tipo II)
+            aprovacao_rate = (tn + fn) / (tp + tn + fp + fn)  # Taxa de aprovação (classe negativa)
+            inadimplencia_portfolio = fn / (tn + fn) if (tn + fn) > 0 else 0  # Inadimplentes entre aprovados
+        else:  # 'adimplente'
+            # Neste caso, invertemos a interpretação
+            # TP = Adimplente classificado como adimplente (correto)
+            # TN = Inadimplente classificado como inadimplente (correto)
+            # FP = Inadimplente classificado como adimplente (erro tipo I)
+            # FN = Adimplente classificado como inadimplente (erro tipo II)
+            aprovacao_rate = (tp + fp) / (tp + tn + fp + fn)  # Taxa de aprovação (classe positiva)
+            inadimplencia_portfolio = fp / (tp + fp) if (tp + fp) > 0 else 0  # Inadimplentes entre aprovados
 
-        # Calcular custo de negócio
+        # Calcular custo de negócio - CORRIGIDO
         # Custo = FP + cost_ratio * FN
         business_cost = fp + self.cost_fn_ratio * fn
         normalized_cost = business_cost / len(y_test)
@@ -218,10 +248,15 @@ class ModelEvaluator:
             'inadimplencia_portfolio': inadimplencia_portfolio,
             'business_cost': business_cost,
             'normalized_cost': normalized_cost,
-            'y_proba': y_proba,
-            'y_pred': y_pred,
-            'y_true': y_test
         }
+
+        # Opcionalmente armazenar previsões completas
+        if store_predictions:
+            results.update({
+                'y_proba': y_proba,
+                'y_pred': y_pred,
+                'y_true': y_test
+            })
 
         self.model_results[name] = results
 
@@ -264,24 +299,35 @@ class ModelEvaluator:
 
         return results
 
-    def evaluate_all_models(self, X_test, y_test):
+    def evaluate_all_models(self, X_test, y_test, store_predictions=False):
         """
         Avalia todos os modelos registrados.
 
         Args:
             X_test: Features de teste
             y_test: Target de teste
+            store_predictions: Se True, armazena as predições para análises adicionais
 
         Returns:
             DataFrame com resultados comparativos
         """
+        # Validar entradas
+        if not isinstance(X_test, (pd.DataFrame, np.ndarray)):
+            raise TypeError("X_test deve ser um DataFrame pandas ou array numpy")
+
+        if not isinstance(y_test, (pd.Series, np.ndarray, list)):
+            raise TypeError("y_test deve ser uma Series pandas, array numpy ou lista")
+
+        if len(X_test) != len(y_test):
+            raise ValueError(f"X_test ({len(X_test)} amostras) e y_test ({len(y_test)} amostras) devem ter o mesmo número de amostras")
+
         if not self.models:
             raise ValueError("Nenhum modelo registrado para avaliação.")
 
         logger.info(f"Avaliando {len(self.models)} modelos...")
 
         for name in self.models:
-            self.evaluate_model(name, X_test, y_test)
+            self.evaluate_model(name, X_test, y_test, store_predictions=store_predictions)
 
         # Criar DataFrame comparativo
         results_list = []
@@ -317,8 +363,13 @@ class ModelEvaluator:
 
         # Gerar gráficos comparativos
         self._plot_models_comparison(comparison_df)
-        self._plot_roc_curves_comparison()
-        self._plot_pr_curves_comparison()
+
+        # Apenas gerar gráficos de comparação se as predições foram armazenadas
+        if store_predictions:
+            self._plot_roc_curves_comparison()
+            self._plot_pr_curves_comparison()
+        else:
+            logger.warning("Gráficos comparativos de curvas ROC e PR não foram gerados. Execute evaluate_all_models com store_predictions=True.")
 
         return comparison_df
 
@@ -338,6 +389,16 @@ class ModelEvaluator:
         Returns:
             Threshold ótimo
         """
+        # Validar entradas
+        if not isinstance(X_val, (pd.DataFrame, np.ndarray)):
+            raise TypeError("X_val deve ser um DataFrame pandas ou array numpy")
+
+        if not isinstance(y_val, (pd.Series, np.ndarray, list)):
+            raise TypeError("y_val deve ser uma Series pandas, array numpy ou lista")
+
+        if len(X_val) != len(y_val):
+            raise ValueError("X_val e y_val devem ter o mesmo número de amostras")
+
         if name not in self.models:
             raise ValueError(f"Modelo '{name}' não encontrado.")
 
@@ -372,9 +433,13 @@ class ModelEvaluator:
             recall = tp / (tp + fn) if (tp + fn) > 0 else 0
             f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
-            # Calcular métricas de negócio
-            aprovacao_rate = (tp + fp) / (tp + tn + fp + fn)
-            inadimplencia_portfolio = (fn) / (tp + fn) if (tp + fn) > 0 else 0
+            # Calcular métricas de negócio - CORRIGIDAS
+            if self.positive_class == 'inadimplente':
+                aprovacao_rate = (tn + fn) / (tp + tn + fp + fn)
+                inadimplencia_portfolio = fn / (tn + fn) if (tn + fn) > 0 else 0
+            else:
+                aprovacao_rate = (tp + fp) / (tp + tn + fp + fn)
+                inadimplencia_portfolio = fp / (tp + fp) if (tp + fp) > 0 else 0
 
             # Calcular custo de negócio
             business_cost = fp + self.cost_fn_ratio * fn
@@ -530,6 +595,16 @@ class ModelEvaluator:
         Returns:
             Dicionário com thresholds ótimos para cada modelo
         """
+        # Validar entradas
+        if not isinstance(X_val, (pd.DataFrame, np.ndarray)):
+            raise TypeError("X_val deve ser um DataFrame pandas ou array numpy")
+
+        if not isinstance(y_val, (pd.Series, np.ndarray, list)):
+            raise TypeError("y_val deve ser uma Series pandas, array numpy ou lista")
+
+        if len(X_val) != len(y_val):
+            raise ValueError("X_val e y_val devem ter o mesmo número de amostras")
+
         if not self.models:
             raise ValueError("Nenhum modelo registrado para otimização.")
 
@@ -597,27 +672,42 @@ class ModelEvaluator:
         return report_path
 
     def _generate_html_report(self, name, results):
-        """Gera relatório em formato HTML."""
+        """Gera relatório em formato HTML com valores financeiros corrigidos."""
         threshold = results['threshold']
 
         # Calcular valores para relatório
         total_clients = results['tp'] + results['tn'] + results['fp'] + results['fn']
-        approved_clients = results['tp'] + results['fp']
-        rejected_clients = results['tn'] + results['fn']
+
+        # Determinar clientes aprovados/rejeitados com base na classe positiva
+        if self.positive_class == 'inadimplente':
+            # Aprovados são os que NÃO foram classificados como inadimplentes
+            approved_clients = results['tn'] + results['fn']
+            rejected_clients = results['tp'] + results['fp']
+        else:
+            # Aprovados são os que foram classificados como adimplentes
+            approved_clients = results['tp'] + results['fp']
+            rejected_clients = results['tn'] + results['fn']
 
         # Revenue e loss (valores fictícios para demonstração)
         avg_loan = 10000  # Valor médio do empréstimo
         avg_interest_rate = 0.15  # Taxa de juros média
         default_loss_rate = 0.8  # Taxa de perda em caso de inadimplência (80% do empréstimo é perdido)
 
-        # Receita dos empréstimos (juros dos não inadimplentes)
-        revenue = results['tp'] * avg_loan * avg_interest_rate
-
-        # Perda por inadimplência (TP = inadimplentes aprovados)
-        loss = results['fn'] * avg_loan * default_loss_rate
-
-        # Perda de oportunidade (bons pagadores rejeitados)
-        opportunity_loss = results['tn'] * avg_loan * avg_interest_rate * 0.5  # 50% da receita potencial
+        # Receita dos empréstimos (juros dos não inadimplentes) - CORRIGIDO
+        if self.positive_class == 'inadimplente':
+            # Receita vem dos verdadeiros negativos (adimplentes aprovados)
+            revenue = results['tn'] * avg_loan * avg_interest_rate
+            # Perda vem dos falsos negativos (inadimplentes aprovados como adimplentes)
+            loss = results['fn'] * avg_loan * default_loss_rate
+            # Perda de oportunidade de bons pagadores rejeitados como inadimplentes
+            opportunity_loss = results['fp'] * avg_loan * avg_interest_rate * 0.5
+        else:
+            # Receita vem dos verdadeiros positivos (adimplentes classificados como tal)
+            revenue = results['tp'] * avg_loan * avg_interest_rate
+            # Perda vem dos falsos positivos (inadimplentes aprovados como adimplentes)
+            loss = results['fp'] * avg_loan * default_loss_rate
+            # Perda de oportunidade de bons pagadores rejeitados como inadimplentes
+            opportunity_loss = results['fn'] * avg_loan * avg_interest_rate * 0.5
 
         # Lucro líquido
         net_profit = revenue - loss
@@ -663,6 +753,7 @@ class ModelEvaluator:
             <p>
                 Este relatório apresenta os resultados e o impacto de negócio do modelo de predição de inadimplência <strong>{name}</strong>.
                 O modelo foi avaliado com um threshold de <strong>{threshold:.4f}</strong> para classificação.
+                Classe positiva definida como: <strong>{self.positive_class}</strong>.
             </p>
 
             <div class="metrics">
@@ -677,7 +768,7 @@ class ModelEvaluator:
                     <div class="metric-value {'bad' if results['inadimplencia_portfolio'] > 0.15 else 'medium' if results['inadimplencia_portfolio'] > 0.1 else 'good'}">
                         {results['inadimplencia_portfolio']:.1%}
                     </div>
-                    <div class="metric-context">{results['fn']} clientes inadimplentes não detectados</div>
+                    <div class="metric-context">Inadimplentes entre aprovados</div>
                 </div>
 
                 <div class="metric-card">
@@ -705,16 +796,16 @@ class ModelEvaluator:
             <table>
                 <tr>
                     <th></th>
-                    <th>Predito: Não Inadimplente</th>
-                    <th>Predito: Inadimplente</th>
+                    <th>Predito: Não {self.positive_class}</th>
+                    <th>Predito: {self.positive_class.title()}</th>
                 </tr>
                 <tr>
-                    <th>Real: Não Inadimplente</th>
+                    <th>Real: Não {self.positive_class}</th>
                     <td>{results['tn']} (Verdadeiro Negativo)</td>
                     <td>{results['fp']} (Falso Positivo)</td>
                 </tr>
                 <tr>
-                    <th>Real: Inadimplente</th>
+                    <th>Real: {self.positive_class.title()}</th>
                     <td>{results['fn']} (Falso Negativo)</td>
                     <td>{results['tp']} (Verdadeiro Positivo)</td>
                 </tr>
@@ -735,17 +826,17 @@ class ModelEvaluator:
                 <tr>
                     <td>Precisão</td>
                     <td>{results['precision']:.4f}</td>
-                    <td>Dos clientes classificados como inadimplentes, quantos realmente são</td>
+                    <td>Dos clientes classificados como {self.positive_class}, quantos realmente são</td>
                 </tr>
                 <tr>
                     <td>Recall</td>
                     <td>{results['recall']:.4f}</td>
-                    <td>Dos clientes realmente inadimplentes, quantos foram detectados</td>
+                    <td>Dos clientes realmente {self.positive_class}, quantos foram detectados</td>
                 </tr>
                 <tr>
                     <td>Especificidade</td>
                     <td>{results['specificity']:.4f}</td>
-                    <td>Dos clientes bons pagadores, quantos foram classificados corretamente</td>
+                    <td>Dos clientes não {self.positive_class}, quantos foram classificados corretamente</td>
                 </tr>
                 <tr>
                     <td>F1-Score</td>
@@ -805,24 +896,24 @@ class ModelEvaluator:
                     <td>{rejected_clients / total_clients:.1%}</td>
                 </tr>
                 <tr>
-                    <td>Bons Pagadores Aprovados</td>
-                    <td>{results['tp']}</td>
-                    <td>{results['tp'] / total_clients:.1%}</td>
+                    <td>Adimplentes Aprovados</td>
+                    <td>{results['tn'] if self.positive_class == 'inadimplente' else results['tp']}</td>
+                    <td>{(results['tn'] if self.positive_class == 'inadimplente' else results['tp']) / total_clients:.1%}</td>
                 </tr>
                 <tr>
                     <td>Inadimplentes Rejeitados</td>
-                    <td>{results['tn']}</td>
-                    <td>{results['tn'] / total_clients:.1%}</td>
+                    <td>{results['tp'] if self.positive_class == 'inadimplente' else results['tn']}</td>
+                    <td>{(results['tp'] if self.positive_class == 'inadimplente' else results['tn']) / total_clients:.1%}</td>
                 </tr>
                 <tr>
-                    <td>Bons Pagadores Rejeitados (Oportunidade Perdida)</td>
-                    <td>{results['fn']}</td>
-                    <td>{results['fn'] / total_clients:.1%}</td>
+                    <td>Adimplentes Rejeitados (Oportunidade Perdida)</td>
+                    <td>{results['fp'] if self.positive_class == 'inadimplente' else results['fn']}</td>
+                    <td>{(results['fp'] if self.positive_class == 'inadimplente' else results['fn']) / total_clients:.1%}</td>
                 </tr>
                 <tr>
                     <td>Inadimplentes Aprovados (Risco)</td>
-                    <td>{results['fp']}</td>
-                    <td>{results['fp'] / total_clients:.1%}</td>
+                    <td>{results['fn'] if self.positive_class == 'inadimplente' else results['fp']}</td>
+                    <td>{(results['fn'] if self.positive_class == 'inadimplente' else results['fp']) / total_clients:.1%}</td>
                 </tr>
             </table>
         </div>
@@ -847,27 +938,34 @@ class ModelEvaluator:
         return html
 
     def _generate_md_report(self, name, results):
-        """Gera relatório em formato Markdown."""
+        """Gera relatório em formato Markdown com valores financeiros corrigidos."""
         threshold = results['threshold']
 
-        # Calcular valores para relatório (mesma lógica do HTML)
+        # Calcular valores para relatório (usando a mesma lógica corrigida do HTML)
         total_clients = results['tp'] + results['tn'] + results['fp'] + results['fn']
-        approved_clients = results['tp'] + results['fp']
-        rejected_clients = results['tn'] + results['fn']
+
+        # Determinar clientes aprovados/rejeitados com base na classe positiva
+        if self.positive_class == 'inadimplente':
+            approved_clients = results['tn'] + results['fn']
+            rejected_clients = results['tp'] + results['fp']
+        else:
+            approved_clients = results['tp'] + results['fp']
+            rejected_clients = results['tn'] + results['fn']
 
         # Revenue e loss (valores fictícios para demonstração)
         avg_loan = 10000  # Valor médio do empréstimo
         avg_interest_rate = 0.15  # Taxa de juros média
         default_loss_rate = 0.8  # Taxa de perda em caso de inadimplência (80% do empréstimo é perdido)
 
-        # Receita dos empréstimos (juros dos não inadimplentes)
-        revenue = results['tp'] * avg_loan * avg_interest_rate
-
-        # Perda por inadimplência (TP = inadimplentes aprovados)
-        loss = results['fn'] * avg_loan * default_loss_rate
-
-        # Perda de oportunidade (bons pagadores rejeitados)
-        opportunity_loss = results['tn'] * avg_loan * avg_interest_rate * 0.5  # 50% da receita potencial
+        # Receita dos empréstimos (juros dos não inadimplentes) - CORRIGIDO
+        if self.positive_class == 'inadimplente':
+            revenue = results['tn'] * avg_loan * avg_interest_rate
+            loss = results['fn'] * avg_loan * default_loss_rate
+            opportunity_loss = results['fp'] * avg_loan * avg_interest_rate * 0.5
+        else:
+            revenue = results['tp'] * avg_loan * avg_interest_rate
+            loss = results['fp'] * avg_loan * default_loss_rate
+            opportunity_loss = results['fn'] * avg_loan * avg_interest_rate * 0.5
 
         # Lucro líquido
         net_profit = revenue - loss
@@ -879,7 +977,8 @@ class ModelEvaluator:
 
 **Modelo:** {name}  
 **Data:** {datetime.now().strftime('%d/%m/%Y %H:%M')}  
-**Threshold de Classificação:** {threshold:.4f}
+**Threshold de Classificação:** {threshold:.4f}  
+**Classe Positiva:** {self.positive_class}
 
 ## Resumo Executivo
 
@@ -889,7 +988,7 @@ O modelo foi avaliado com um threshold de **{threshold:.4f}** para classificaç�
 | Métrica | Valor | Contexto |
 |---------|-------|----------|
 | Taxa de Aprovação | {results['aprovacao_rate']:.1%} | {approved_clients} de {total_clients} clientes |
-| Taxa de Inadimplência na Carteira | {results['inadimplencia_portfolio']:.1%} | {results['fn']} clientes inadimplentes não detectados |
+| Taxa de Inadimplência na Carteira | {results['inadimplencia_portfolio']:.1%} | Inadimplentes entre aprovados |
 | AUC-ROC | {results['auc']:.3f} | Capacidade de discriminação do modelo |
 | ROI Estimado | {roi:.1f}% | Retorno sobre investimento |
 
@@ -897,19 +996,19 @@ O modelo foi avaliado com um threshold de **{threshold:.4f}** para classificaç�
 
 ### Matriz de Confusão
 
-|                          | Predito: Não Inadimplente | Predito: Inadimplente |
+|                          | Predito: Não {self.positive_class} | Predito: {self.positive_class.title()} |
 |--------------------------|---------------------------|------------------------|
-| Real: Não Inadimplente   | {results['tn']} (Verdadeiro Negativo) | {results['fp']} (Falso Positivo) |
-| Real: Inadimplente       | {results['fn']} (Falso Negativo) | {results['tp']} (Verdadeiro Positivo) |
+| Real: Não {self.positive_class}   | {results['tn']} (Verdadeiro Negativo) | {results['fp']} (Falso Positivo) |
+| Real: {self.positive_class.title()}       | {results['fn']} (Falso Negativo) | {results['tp']} (Verdadeiro Positivo) |
 
 ### Métricas de Performance
 
 | Métrica | Valor | Interpretação |
 |---------|-------|---------------|
 | Acurácia | {results['accuracy']:.4f} | Proporção de predições corretas |
-| Precisão | {results['precision']:.4f} | Dos clientes classificados como inadimplentes, quantos realmente são |
-| Recall | {results['recall']:.4f} | Dos clientes realmente inadimplentes, quantos foram detectados |
-| Especificidade | {results['specificity']:.4f} | Dos clientes bons pagadores, quantos foram classificados corretamente |
+| Precisão | {results['precision']:.4f} | Dos clientes classificados como {self.positive_class}, quantos realmente são |
+| Recall | {results['recall']:.4f} | Dos clientes realmente {self.positive_class}, quantos foram detectados |
+| Especificidade | {results['specificity']:.4f} | Dos clientes não {self.positive_class}, quantos foram classificados corretamente |
 | F1-Score | {results['f1_score']:.4f} | Média harmônica entre precisão e recall |
 
 ## Impacto de Negócio
@@ -929,10 +1028,10 @@ O modelo foi avaliado com um threshold de **{threshold:.4f}** para classificaç�
 |----------|------------|------------|
 | Aprovados | {approved_clients} | {approved_clients / total_clients:.1%} |
 | Rejeitados | {rejected_clients} | {rejected_clients / total_clients:.1%} |
-| Bons Pagadores Aprovados | {results['tp']} | {results['tp'] / total_clients:.1%} |
-| Inadimplentes Rejeitados | {results['tn']} | {results['tn'] / total_clients:.1%} |
-| Bons Pagadores Rejeitados (Oportunidade Perdida) | {results['fn']} | {results['fn'] / total_clients:.1%} |
-| Inadimplentes Aprovados (Risco) | {results['fp']} | {results['fp'] / total_clients:.1%} |
+| Adimplentes Aprovados | {results['tn'] if self.positive_class == 'inadimplente' else results['tp']} | {(results['tn'] if self.positive_class == 'inadimplente' else results['tp']) / total_clients:.1%} |
+| Inadimplentes Rejeitados | {results['tp'] if self.positive_class == 'inadimplente' else results['tn']} | {(results['tp'] if self.positive_class == 'inadimplente' else results['tn']) / total_clients:.1%} |
+| Adimplentes Rejeitados (Oportunidade Perdida) | {results['fp'] if self.positive_class == 'inadimplente' else results['fn']} | {(results['fp'] if self.positive_class == 'inadimplente' else results['fn']) / total_clients:.1%} |
+| Inadimplentes Aprovados (Risco) | {results['fn'] if self.positive_class == 'inadimplente' else results['fp']} | {(results['fn'] if self.positive_class == 'inadimplente' else results['fp']) / total_clients:.1%} |
 
 ## Recomendações
 
@@ -948,27 +1047,34 @@ Relatório gerado automaticamente em {datetime.now().strftime('%d/%m/%Y %H:%M')}
         return md
 
     def _generate_txt_report(self, name, results):
-        """Gera relatório em formato texto plano."""
+        """Gera relatório em formato texto plano com valores financeiros corrigidos."""
         threshold = results['threshold']
 
-        # Calcular valores para relatório (mesma lógica do HTML e MD)
+        # Calcular valores para relatório (usando a mesma lógica corrigida do HTML e MD)
         total_clients = results['tp'] + results['tn'] + results['fp'] + results['fn']
-        approved_clients = results['tp'] + results['fp']
-        rejected_clients = results['tn'] + results['fn']
+
+        # Determinar clientes aprovados/rejeitados com base na classe positiva
+        if self.positive_class == 'inadimplente':
+            approved_clients = results['tn'] + results['fn']
+            rejected_clients = results['tp'] + results['fp']
+        else:
+            approved_clients = results['tp'] + results['fp']
+            rejected_clients = results['tn'] + results['fn']
 
         # Revenue e loss (valores fictícios para demonstração)
         avg_loan = 10000  # Valor médio do empréstimo
         avg_interest_rate = 0.15  # Taxa de juros média
         default_loss_rate = 0.8  # Taxa de perda em caso de inadimplência (80% do empréstimo é perdido)
 
-        # Receita dos empréstimos (juros dos não inadimplentes)
-        revenue = results['tp'] * avg_loan * avg_interest_rate
-
-        # Perda por inadimplência (TP = inadimplentes aprovados)
-        loss = results['fn'] * avg_loan * default_loss_rate
-
-        # Perda de oportunidade (bons pagadores rejeitados)
-        opportunity_loss = results['tn'] * avg_loan * avg_interest_rate * 0.5  # 50% da receita potencial
+        # Receita dos empréstimos (juros dos não inadimplentes) - CORRIGIDO
+        if self.positive_class == 'inadimplente':
+            revenue = results['tn'] * avg_loan * avg_interest_rate
+            loss = results['fn'] * avg_loan * default_loss_rate
+            opportunity_loss = results['fp'] * avg_loan * avg_interest_rate * 0.5
+        else:
+            revenue = results['tp'] * avg_loan * avg_interest_rate
+            loss = results['fp'] * avg_loan * default_loss_rate
+            opportunity_loss = results['fn'] * avg_loan * avg_interest_rate * 0.5
 
         # Lucro líquido
         net_profit = revenue - loss
@@ -982,6 +1088,7 @@ Relatório gerado automaticamente em {datetime.now().strftime('%d/%m/%Y %H:%M')}
 Modelo: {name}
 Data: {datetime.now().strftime('%d/%m/%Y %H:%M')}
 Threshold de Classificação: {threshold:.4f}
+Classe Positiva: {self.positive_class}
 
 RESUMO EXECUTIVO
 ---------------
@@ -990,7 +1097,7 @@ Este relatório apresenta os resultados e o impacto de negócio do modelo de pre
 O modelo foi avaliado com um threshold de {threshold:.4f} para classificação.
 
 - Taxa de Aprovação: {results['aprovacao_rate']:.1%} ({approved_clients} de {total_clients} clientes)
-- Taxa de Inadimplência na Carteira: {results['inadimplencia_portfolio']:.1%} ({results['fn']} clientes inadimplentes não detectados)
+- Taxa de Inadimplência na Carteira: {results['inadimplencia_portfolio']:.1%} (Inadimplentes entre aprovados)
 - AUC-ROC: {results['auc']:.3f}
 - ROI Estimado: {roi:.1f}%
 
@@ -998,10 +1105,10 @@ PERFORMANCE DE CLASSIFICAÇÃO
 --------------------------
 
 Matriz de Confusão:
-                      | Predito: Não Inadimplente | Predito: Inadimplente
+                      | Predito: Não {self.positive_class} | Predito: {self.positive_class}
 ----------------------|---------------------------|----------------------
-Real: Não Inadimplente| {results['tn']} (Verdadeiro Negativo) | {results['fp']} (Falso Positivo)
-Real: Inadimplente    | {results['fn']} (Falso Negativo) | {results['tp']} (Verdadeiro Positivo)
+Real: Não {self.positive_class}| {results['tn']} (Verdadeiro Negativo) | {results['fp']} (Falso Positivo)
+Real: {self.positive_class}    | {results['fn']} (Falso Negativo) | {results['tp']} (Verdadeiro Positivo)
 
 Métricas de Performance:
 - Acurácia: {results['accuracy']:.4f}
@@ -1022,10 +1129,10 @@ Análise de Custo-Benefício:
 Segmentação de Clientes:
 - Aprovados: {approved_clients} ({approved_clients / total_clients:.1%})
 - Rejeitados: {rejected_clients} ({rejected_clients / total_clients:.1%})
-- Bons Pagadores Aprovados: {results['tp']} ({results['tp'] / total_clients:.1%})
-- Inadimplentes Rejeitados: {results['tn']} ({results['tn'] / total_clients:.1%})
-- Bons Pagadores Rejeitados (Oportunidade Perdida): {results['fn']} ({results['fn'] / total_clients:.1%})
-- Inadimplentes Aprovados (Risco): {results['fp']} ({results['fp'] / total_clients:.1%})
+- Adimplentes Aprovados: {results['tn'] if self.positive_class == 'inadimplente' else results['tp']} ({(results['tn'] if self.positive_class == 'inadimplente' else results['tp']) / total_clients:.1%})
+- Inadimplentes Rejeitados: {results['tp'] if self.positive_class == 'inadimplente' else results['tn']} ({(results['tp'] if self.positive_class == 'inadimplente' else results['tn']) / total_clients:.1%})
+- Adimplentes Rejeitados (Oportunidade Perdida): {results['fp'] if self.positive_class == 'inadimplente' else results['fn']} ({(results['fp'] if self.positive_class == 'inadimplente' else results['fn']) / total_clients:.1%})
+- Inadimplentes Aprovados (Risco): {results['fn'] if self.positive_class == 'inadimplente' else results['fp']} ({(results['fn'] if self.positive_class == 'inadimplente' else results['fp']) / total_clients:.1%})
 
 RECOMENDAÇÕES
 ------------
@@ -1120,8 +1227,8 @@ Relatório gerado automaticamente em {datetime.now().strftime('%d/%m/%Y %H:%M')}
         plt.xlabel('Predito')
         plt.ylabel('Real')
         plt.title(f'Matriz de Confusão - {model_name}')
-        plt.xticks([0.5, 1.5], ['Não Inadimplente', 'Inadimplente'])
-        plt.yticks([0.5, 1.5], ['Não Inadimplente', 'Inadimplente'])
+        plt.xticks([0.5, 1.5], [f'Não {self.positive_class.title()}', self.positive_class.title()])
+        plt.yticks([0.5, 1.5], [f'Não {self.positive_class.title()}', self.positive_class.title()])
 
         # Salvar se path fornecido
         if save_path:
@@ -1138,8 +1245,8 @@ Relatório gerado automaticamente em {datetime.now().strftime('%d/%m/%Y %H:%M')}
             plt.xlabel('Predito')
             plt.ylabel('Real')
             plt.title(f'Matriz de Confusão Normalizada - {model_name}')
-            plt.xticks([0.5, 1.5], ['Não Inadimplente', 'Inadimplente'])
-            plt.yticks([0.5, 1.5], ['Não Inadimplente', 'Inadimplente'])
+            plt.xticks([0.5, 1.5], [f'Não {self.positive_class.title()}', self.positive_class.title()])
+            plt.yticks([0.5, 1.5], [f'Não {self.positive_class.title()}', self.positive_class.title()])
             plt.savefig(norm_path, dpi=300, bbox_inches='tight')
             plt.close()
 
@@ -1154,7 +1261,7 @@ Relatório gerado automaticamente em {datetime.now().strftime('%d/%m/%Y %H:%M')}
         })
 
         # Converter para texto para melhor visualização
-        df['Classe'] = df['Classe'].map({0: 'Não Inadimplente', 1: 'Inadimplente'})
+        df['Classe'] = df['Classe'].map({0: f'Não {self.positive_class.title()}', 1: self.positive_class.title()})
 
         # Plotar histogramas
         sns.histplot(data=df, x='Score', hue='Classe', bins=50, alpha=0.7, kde=True, element="step")
@@ -1177,31 +1284,14 @@ Relatório gerado automaticamente em {datetime.now().strftime('%d/%m/%Y %H:%M')}
             plt.show()
 
     def _plot_calibration_curve(self, y_true, y_proba, model_name, save_path=None):
-        """Plota a curva de calibração."""
+        """Plota a curva de calibração usando scikit-learn."""
         plt.figure(figsize=(10, 6))
 
-        # Criar bins de probabilidade
-        bins = 10
-        bin_edges = np.linspace(0, 1, bins + 1)
-        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-
-        # Inicializar arrays para armazenar valores
-        observed_freq = np.zeros(bins)
-        bin_counts = np.zeros(bins)
-
-        # Calcular frequência observada por bin
-        for i in range(bins):
-            if i == bins - 1:
-                mask = (y_proba >= bin_edges[i]) & (y_proba <= bin_edges[i + 1])
-            else:
-                mask = (y_proba >= bin_edges[i]) & (y_proba < bin_edges[i + 1])
-
-            bin_counts[i] = mask.sum()
-            if bin_counts[i] > 0:
-                observed_freq[i] = y_true[mask].mean()
+        # Calcular curva de calibração
+        prob_true, prob_pred = calibration_curve(y_true, y_proba, n_bins=10)
 
         # Plotar curva de calibração
-        plt.plot(bin_centers, observed_freq, 'o-', label='Observado')
+        plt.plot(prob_pred, prob_true, 'o-', label='Observado')
         plt.plot([0, 1], [0, 1], 'k--', label='Perfeitamente Calibrado')
 
         # Configurações do gráfico
@@ -1210,12 +1300,6 @@ Relatório gerado automaticamente em {datetime.now().strftime('%d/%m/%Y %H:%M')}
         plt.title(f'Curva de Calibração - {model_name}')
         plt.legend()
         plt.grid(True, alpha=0.3)
-
-        # Adicionar texto com número de exemplos por bin
-        for i in range(bins):
-            if bin_counts[i] > 0:
-                plt.text(bin_centers[i], observed_freq[i] + 0.05, f'n={int(bin_counts[i])}',
-                         ha='center', va='center', fontsize=8, alpha=0.8)
 
         # Salvar se path fornecido
         if save_path:
@@ -1252,13 +1336,245 @@ Relatório gerado automaticamente em {datetime.now().strftime('%d/%m/%Y %H:%M')}
             f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
             accuracy = (tp + tn) / (tp + tn + fp + fn)
 
-            # Métricas de negócio
-            approval_rate = (tp + fp) / (tp + tn + fp + fn)
-            default_rate = fn / (tp + fn) if (tp + fn) > 0 else 0
+            # Métricas de negócio - CORRIGIDAS
+            if self.positive_class == 'inadimplente':
+                approval_rate = (tn + fn) / (tp + tn + fp + fn)
+                default_rate = fn / (tn + fn) if (tn + fn) > 0 else 0
+            else:
+                approval_rate = (tp + fp) / (tp + tn + fp + fn)
+                default_rate = fp / (tp + fp) if (tp + fp) > 0 else 0
 
             # Armazenar valores
             precision_values.append(precision)
             recall_values.append(recall)
             f1_values.append(f1)
             accuracy_values.append(accuracy)
-            approval
+            approval_rate_values.append(approval_rate)
+            default_rate_values.append(default_rate)
+
+        # Plotar gráficos
+        plt.subplot(2, 2, 1)
+        plt.plot(thresholds, precision_values, label='Precision')
+        plt.plot(thresholds, recall_values, label='Recall')
+        plt.plot(thresholds, f1_values, label='F1')
+        plt.xlabel('Threshold')
+        plt.ylabel('Valor')
+        plt.title('Métricas de Classificação')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+
+        plt.subplot(2, 2, 2)
+        plt.plot(thresholds, accuracy_values, label='Acurácia')
+        plt.xlabel('Threshold')
+        plt.ylabel('Acurácia')
+        plt.title('Acurácia vs Threshold')
+        plt.grid(True, alpha=0.3)
+
+        plt.subplot(2, 2, 3)
+        plt.plot(thresholds, approval_rate_values, label='Taxa de Aprovação')
+        plt.xlabel('Threshold')
+        plt.ylabel('Taxa de Aprovação')
+        plt.title('Aprovação vs Threshold')
+        plt.grid(True, alpha=0.3)
+
+        plt.subplot(2, 2, 4)
+        plt.plot(thresholds, default_rate_values, label='Taxa de Inadimplência')
+        plt.xlabel('Threshold')
+        plt.ylabel('Taxa de Inadimplência')
+        plt.title('Inadimplência vs Threshold')
+        plt.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        plt.suptitle(f'Impacto do Threshold nas Métricas - {model_name}', fontsize=16, y=1.05)
+
+        # Salvar se path fornecido
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            plt.close()
+        else:
+            plt.show()
+
+    def _plot_models_comparison(self, comparison_df):
+        """Plota gráfico comparativo entre modelos."""
+        # Plot para AUC e F1-Score
+        plt.figure(figsize=(12, 6))
+        metrics = ['AUC', 'F1-Score', 'Precisão', 'Recall']
+        comparison_df.set_index('Modelo')[metrics].plot(kind='bar')
+        plt.title('Comparação de Métricas de Classificação entre Modelos')
+        plt.ylabel('Valor')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+
+        # Salvar gráfico
+        plt.savefig(os.path.join(self.output_dir, f"models_metrics_comparison_{self.timestamp}.png"),
+                    dpi=300, bbox_inches='tight')
+        plt.close()
+
+        # Plot para Taxa de Aprovação e Taxa de Inadimplência
+        plt.figure(figsize=(12, 6))
+        metrics = ['Taxa de Aprovação', 'Taxa de Inadimplência', 'Custo de Negócio']
+        comparison_df.set_index('Modelo')[metrics].plot(kind='bar')
+        plt.title('Comparação de Métricas de Negócio entre Modelos')
+        plt.ylabel('Valor')
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+
+        # Salvar gráfico
+        plt.savefig(os.path.join(self.output_dir, f"models_business_comparison_{self.timestamp}.png"),
+                    dpi=300, bbox_inches='tight')
+        plt.close()
+
+    def _plot_roc_curves_comparison(self):
+        """Plota comparação das curvas ROC de todos os modelos avaliados."""
+        plt.figure(figsize=(10, 8))
+
+        for name, results in self.model_results.items():
+            if 'y_true' not in results or 'y_proba' not in results:
+                logger.warning(f"Dados de previsão não disponíveis para o modelo '{name}'. Execute evaluate_model com store_predictions=True.")
+                continue
+
+            y_true = results['y_true']
+            y_proba = results['y_proba']
+
+            # Calcular curva ROC
+            fpr, tpr, _ = roc_curve(y_true, y_proba)
+            auc = results['auc']
+
+            # Plotar curva
+            plt.plot(fpr, tpr, label=f'{name} (AUC = {auc:.4f})')
+
+        # Plotar linha de referência
+        plt.plot([0, 1], [0, 1], 'k--', alpha=0.8)
+
+        # Configurações do gráfico
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('Taxa de Falsos Positivos')
+        plt.ylabel('Taxa de Verdadeiros Positivos')
+        plt.title('Comparação de Curvas ROC')
+        plt.legend(loc='lower right')
+        plt.grid(True, alpha=0.3)
+
+        # Salvar gráfico
+        plt.savefig(os.path.join(self.output_dir, f"roc_curves_comparison_{self.timestamp}.png"),
+                    dpi=300, bbox_inches='tight')
+        plt.close()
+
+    def _plot_pr_curves_comparison(self):
+        """Plota comparação das curvas Precision-Recall de todos os modelos avaliados."""
+        plt.figure(figsize=(10, 8))
+
+        # Referência para classificador aleatório
+        no_skill = None
+
+        for name, results in self.model_results.items():
+            if 'y_true' not in results or 'y_proba' not in results:
+                logger.warning(f"Dados de previsão não disponíveis para o modelo '{name}'. Execute evaluate_model com store_predictions=True.")
+                continue
+
+            y_true = results['y_true']
+            y_proba = results['y_proba']
+
+            # Calcular curva PR
+            precision, recall, _ = precision_recall_curve(y_true, y_proba)
+            avg_precision = results['avg_precision']
+
+            # Plotar curva
+            plt.plot(recall, precision, label=f'{name} (AP = {avg_precision:.4f})')
+
+            # Calcular linha de referência apenas uma vez
+            if no_skill is None:
+                no_skill = np.sum(y_true) / len(y_true)
+
+        # Plotar linha de referência
+        if no_skill is not None:
+            plt.plot([0, 1], [no_skill, no_skill], 'k--', alpha=0.8, label=f'Aleatório ({no_skill:.4f})')
+
+        # Configurações do gráfico
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title('Comparação de Curvas Precision-Recall')
+        plt.legend(loc='best')
+        plt.grid(True, alpha=0.3)
+
+        # Salvar gráfico
+        plt.savefig(os.path.join(self.output_dir, f"pr_curves_comparison_{self.timestamp}.png"),
+                    dpi=300, bbox_inches='tight')
+        plt.close()
+
+
+if __name__ == "__main__":
+    """
+    Demonstração de uso da classe ModelEvaluator.
+    Esta função principal executa quando o script é chamado diretamente.
+    """
+    import argparse
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.datasets import make_classification
+    from sklearn.model_selection import train_test_split
+
+    # Configurar parser de argumentos
+    parser = argparse.ArgumentParser(description='Demonstração de avaliação de modelos de inadimplência')
+    parser.add_argument('--model_path', type=str, help='Caminho para um modelo salvo (opcional)')
+    parser.add_argument('--data_path', type=str, help='Caminho para dados de teste (opcional)')
+    parser.add_argument('--demo', action='store_true', default=True, help='Executar demonstração com dados sintéticos')
+    parser.add_argument('--report_format', type=str, default='html', choices=['html', 'md', 'txt'],
+                        help='Formato do relatório de negócio')
+
+    args = parser.parse_args()
+
+    # Verificar modo de execução
+    if args.model_path and args.data_path:
+        # Modo de execução com arquivos externos
+        logger.info(f"Executando avaliação com modelo: {args.model_path} e dados: {args.data_path}")
+
+        # Implementar carregar modelo e dados reais aqui
+        # ...
+
+    elif args.demo:
+        # Modo de demonstração com dados sintéticos
+        logger.info("Executando demonstração com dados sintéticos...")
+
+        # Gerar dados de exemplo
+        X, y = make_classification(n_samples=1000, n_features=10, n_informative=5,
+                                   n_redundant=2, n_classes=2, weights=[0.8, 0.2],
+                                   random_state=42)
+
+        # Dividir em conjuntos de treinamento, validação e teste
+        X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.4, random_state=42)
+        X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
+
+        # Treinar modelos de exemplo
+        rf_model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+        rf_model.fit(X_train, y_train)
+
+        # Criar avaliador
+        evaluator = ModelEvaluator(cost_fn_ratio=4.0, default_threshold=0.5, positive_class='inadimplente')
+
+        # Adicionar modelo
+        evaluator.add_model("RandomForest_Demo", rf_model)
+
+        # Otimizar threshold
+        logger.info("Otimizando threshold usando conjunto de validação...")
+        evaluator.find_optimal_threshold("RandomForest_Demo", X_val, y_val, optimization_metric='cost')
+
+        # Avaliar modelo
+        logger.info("Avaliando modelo no conjunto de teste...")
+        evaluator.evaluate_model("RandomForest_Demo", X_test, y_test, store_predictions=True)
+
+        # Gerar relatório de negócio
+        logger.info(f"Gerando relatório de negócio no formato {args.report_format}...")
+        report_path = evaluator.generate_business_report("RandomForest_Demo", output_format=args.report_format)
+
+        logger.info(f"Demonstração concluída! Relatório salvo em: {report_path}")
+        logger.info(f"Gráficos e resultados salvos em: {evaluator.output_dir}")
+
+        print(f"\nDemonstração concluída com sucesso!")
+        print(f"Relatório de negócio salvo em: {report_path}")
+        print(f"Gráficos e resultados salvos em: {evaluator.output_dir}")
+
+    else:
+        logger.error("Nenhum modelo/dados fornecidos e modo de demonstração desativado.")
+        parser.print_help()
