@@ -1,0 +1,29 @@
+{
+    "model_name": "RandomForest_Demo",
+    "model_type": "RandomForestClassifier",
+    "creation_date": "2025-03-11",
+    "features": [
+        "feature_0",
+        "feature_1",
+        "feature_2",
+        "feature_3",
+        "feature_4",
+        "feature_5",
+        "feature_6",
+        "feature_7",
+        "feature_8",
+        "feature_9"
+    ],
+    "target": "inadimplente",
+    "metrics": {
+        "auc": 0.85,
+        "accuracy": 0.8,
+        "precision": 0.7,
+        "recall": 0.6,
+        "f1": 0.65
+    },
+    "thresholds": {
+        "RandomForestClassifier": 0.5,
+        "default": 0.5
+    }
+}

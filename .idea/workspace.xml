@@ -5,9 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="393dd3c2-9877-42de-a2b3-7b9917f274b9" name="Changes" comment="Merge remote-tracking branch 'origin/master' into ProjectMLFinance">
-      <change beforePath="$PROJECT_DIR$/.idea/csv-editor.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/csv-editor.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/api/prediction_service.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/features/build_features.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/features/monitor_model.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/models/model_evaluation_v2.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/tests/test_feature_builder.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/models/model_evaluation.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/model_evaluation.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -79,6 +82,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;Python tests.Python tests in test_feature_builder.py.executor&quot;: &quot;Run&quot;,
     &quot;Python tests.Python tests in test_interim.py.executor&quot;: &quot;Run&quot;,
     &quot;Python.MLDataValidator.executor&quot;: &quot;Run&quot;,
     &quot;Python.bank_dataset_generator.executor&quot;: &quot;Run&quot;,
@@ -104,8 +108,10 @@
     &quot;Python.main.executor&quot;: &quot;Run&quot;,
     &quot;Python.make_dataset.executor&quot;: &quot;Run&quot;,
     &quot;Python.model_evaluation.executor&quot;: &quot;Run&quot;,
+    &quot;Python.model_evaluation_v2.executor&quot;: &quot;Run&quot;,
     &quot;Python.model_integration.executor&quot;: &quot;Run&quot;,
     &quot;Python.modeling.executor&quot;: &quot;Run&quot;,
+    &quot;Python.monitor_model.executor&quot;: &quot;Run&quot;,
     &quot;Python.predict_model.executor&quot;: &quot;Run&quot;,
     &quot;Python.preprocess.executor&quot;: &quot;Run&quot;,
     &quot;Python.preprocessing.executor&quot;: &quot;Run&quot;,
@@ -216,7 +222,15 @@
       <workItem from="1740966758231" duration="9186000" />
       <workItem from="1741015384670" duration="10537000" />
       <workItem from="1741058592716" duration="1191000" />
-      <workItem from="1741103815571" duration="4027000" />
+      <workItem from="1741103815571" duration="10970000" />
+      <workItem from="1741142802393" duration="1576000" />
+      <workItem from="1741190583272" duration="3362000" />
+      <workItem from="1741219363897" duration="10775000" />
+      <workItem from="1741572335533" duration="65000" />
+      <workItem from="1741572416740" duration="4754000" />
+      <workItem from="1741647359210" duration="2766000" />
+      <workItem from="1741659812422" duration="4985000" />
+      <workItem from="1741926351771" duration="35000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />
@@ -402,7 +416,39 @@
       <option name="project" value="LOCAL" />
       <updated>1741023138409</updated>
     </task>
-    <option name="localTasksCounter" value="24" />
+    <task id="LOCAL-00024" summary="Merge remote-tracking branch 'origin/master' into ProjectMLFinance">
+      <option name="closed" value="true" />
+      <created>1741113155142</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1741113155142</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Merge remote-tracking branch 'origin/master' into ProjectMLFinance">
+      <option name="closed" value="true" />
+      <created>1741113159851</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1741113159851</updated>
+    </task>
+    <task id="LOCAL-00026" summary="Merge remote-tracking branch 'origin/master' into ProjectMLFinance">
+      <option name="closed" value="true" />
+      <created>1741113165547</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1741113165547</updated>
+    </task>
+    <task id="LOCAL-00027" summary="Merge remote-tracking branch 'origin/master' into ProjectMLFinance">
+      <option name="closed" value="true" />
+      <created>1741113182774</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1741113182774</updated>
+    </task>
+    <option name="localTasksCounter" value="28" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -429,13 +475,14 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$dataset_bank_interim.coverage" NAME="dataset_bank_interim Coverage Results" MODIFIED="1740540203855" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/interim" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$train_model.coverage" NAME="train_model Coverage Results" MODIFIED="1740968698710" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/models" />
-    <SUITE FILE_PATH="coverage/Machine_Learning_Finance$model_evaluation.coverage" NAME="model_evaluation Coverage Results" MODIFIED="1741112391368" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/models" />
+    <SUITE FILE_PATH="coverage/Machine_Learning_Finance$model_evaluation.coverage" NAME="model_evaluation Coverage Results" MODIFIED="1741144366828" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/models" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$preprocessing.coverage" NAME="preprocessing Coverage Results" MODIFIED="1738701895475" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/preprocessing" />
-    <SUITE FILE_PATH="coverage/Machine_Learning_Finance$.coverage" NAME=" Coverage Results" MODIFIED="1740675711017" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/interim" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$feature_engineering.coverage" NAME="feature_engineering Coverage Results" MODIFIED="1740705816337" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/features" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$calibrated_models_enhanced.coverage" NAME="calibrated_models_enhanced Coverage Results" MODIFIED="1741019247815" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/models" />
+    <SUITE FILE_PATH="coverage/Machine_Learning_Finance$.coverage" NAME=" Coverage Results" MODIFIED="1741269454522" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/tests" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$MLDataValidator.coverage" NAME="MLDataValidator Coverage Results" MODIFIED="1740975000146" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/models" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$data_validation.coverage" NAME="data_validation Coverage Results" MODIFIED="1740708899427" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/data" />
+    <SUITE FILE_PATH="coverage/Machine_Learning_Finance$model_evaluation_v2.coverage" NAME="model_evaluation_v2 Coverage Results" MODIFIED="1741573184776" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/models" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$processed_bank.coverage" NAME="processed_bank Coverage Results" MODIFIED="1739079254919" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/processed" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$main.coverage" NAME="main Coverage Results" MODIFIED="1738886529469" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$dataset_generator.coverage" NAME="dataset_generator Coverage Results" MODIFIED="1738797791238" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/generator_data" />
@@ -445,9 +492,10 @@
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$feature_store.coverage" NAME="feature_store Coverage Results" MODIFIED="1738716591144" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/scripts" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$test_faker_version.coverage" NAME="test_faker_version Coverage Results" MODIFIED="1739331125111" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/raw" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$processed_data_bank.coverage" NAME="processed_data_bank Coverage Results" MODIFIED="1740588335586" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/processed" />
+    <SUITE FILE_PATH="coverage/Machine_Learning_Finance$monitor_model.coverage" NAME="monitor_model Coverage Results" MODIFIED="1741704980480" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/features" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$dataset_generator_banking.coverage" NAME="dataset_generator_banking Coverage Results" MODIFIED="1738897894823" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/raw" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$generate_dataset_bankv2.coverage" NAME="generate_dataset_bankv2 Coverage Results" MODIFIED="1740452456595" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/raw" />
-    <SUITE FILE_PATH="coverage/Machine_Learning_Finance$build_features.coverage" NAME="build_features Coverage Results" MODIFIED="1740341297471" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/features" />
+    <SUITE FILE_PATH="coverage/Machine_Learning_Finance$build_features.coverage" NAME="build_features Coverage Results" MODIFIED="1741269440616" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/features" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$generate_dataset_bank.coverage" NAME="generate_dataset_bank Coverage Results" MODIFIED="1739396096795" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/raw" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$generate_data_bank.coverage" NAME="generate_data_bank Coverage Results" MODIFIED="1740537216749" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/raw" />
     <SUITE FILE_PATH="coverage/Machine_Learning_Finance$definitions.coverage" NAME="definitions Coverage Results" MODIFIED="1738714748699" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/data/feature_store" />

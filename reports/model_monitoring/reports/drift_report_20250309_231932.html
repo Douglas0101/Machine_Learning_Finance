@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Monitoramento de Modelo - RandomForest_Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+        h1, h2, h3 { color: #2c3e50; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { background-color: #3498db; color: white; padding: 20px; margin-bottom: 20px; }
+        .section { margin-bottom: 30px; }
+        .metrics { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
+        .metric-card { background-color: #f8f9fa; border-radius: 5px; padding: 15px; min-width: 200px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .metric-title { font-weight: bold; margin-bottom: 5px; color: #7f8c8d; }
+        .metric-value { font-size: 24px; font-weight: bold; color: #2c3e50; }
+        .metric-context { font-size: 14px; color: #7f8c8d; }
+        .good { color: #27ae60; }
+        .medium { color: #f39c12; }
+        .bad { color: #e74c3c; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f2f2f2; }
+        tr:hover { background-color: #f5f5f5; }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            background-color: #e74c3c;
+            color: white;
+            font-weight: bold;
+        }
+        .footer { text-align: center; margin-top: 50px; color: #7f8c8d; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Relatório de Monitoramento de Modelo</h1>
+            <p>Modelo: RandomForest_Demo | Data: 09/03/2025 23:19</p>
+        </div>
+
+        <div class="section">
+            <h2>Status do Modelo <span class="status-badge">Crítico</span></h2>
+
+            <div class="metrics">
+                <div class="metric-card">
+                    <div class="metric-title">Estabilidade</div>
+                    <div class="metric-value bad">
+                        18.2%
+                    </div>
+                    <div class="metric-context">Score de estabilidade geral</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">Data Drift</div>
+                    <div class="metric-value good">
+                        0.12
+                    </div>
+                    <div class="metric-context">Score de mudança nas features</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">Target Drift</div>
+                    <div class="metric-value good">
+                        0.02
+                    </div>
+                    <div class="metric-context">Score de mudança no target</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">Prediction Drift</div>
+                    <div class="metric-value bad">
+                        1.70
+                    </div>
+                    <div class="metric-context">Score de mudança nas predições</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Métricas de Performance</h2>
+
+            <div class="metrics">
+                <div class="metric-card">
+                    <div class="metric-title">AUC</div>
+                    <div class="metric-value good">
+                        0.8503
+                    </div>
+                    <div class="metric-context">Área sob a curva ROC</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">F1-Score</div>
+                    <div class="metric-value medium">
+                        0.6792
+                    </div>
+                    <div class="metric-context">Média harmônica entre precisão e recall</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">Precisão</div>
+                    <div class="metric-value good">
+                        0.9730
+                    </div>
+                    <div class="metric-context">Positivos verdadeiros / positivos previstos</div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-title">Recall</div>
+                    <div class="metric-value bad">
+                        0.5217
+                    </div>
+                    <div class="metric-context">Positivos verdadeiros / positivos reais</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Features com Drift Detectado</h2>
+            <table>
+                <tr>
+                    <th>Feature</th>
+                </tr>
+
+                <tr>
+                    <td>feature_0</td>
+                </tr>
+
+                <tr>
+                    <td>feature_2</td>
+                </tr>
+
+                <tr>
+                    <td>feature_5</td>
+                </tr>
+
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>Recomendações</h2>
+            <ul>
+
+                <li><strong>Reconsidere o uso deste modelo em produção.</strong> A performance e estabilidade estão significativamente comprometidas.</li>
+                <li>Inicie um processo de retreinamento completo com dados atualizados.</li>
+                <li>Investigue as features com drift para entender mudanças fundamentais no domínio.</li>
+                <li>Verifique possíveis falhas na coleta ou processamento de dados.</li>
+
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Relatório gerado automaticamente em 09/03/2025 23:19</p>
+        </div>
+    </div>
+</body>
+</html>
